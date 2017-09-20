@@ -1,0 +1,7 @@
+# Sensitive information
+Sensitive.py
+
+# Generated directories
+.idea/
+__pycache__/
+data/
