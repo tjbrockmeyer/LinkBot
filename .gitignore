@@ -5,3 +5,6 @@ Sensitive.py
 .idea/
 __pycache__/
 data/
+
+# Ignore the readme
+Readme.md
