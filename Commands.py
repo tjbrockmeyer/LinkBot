@@ -29,14 +29,14 @@ def help(message: discord.Message, argstr: str, loop):
             elif cmd in COMMAND_HELP.keys():
                 send_message(message.channel, COMMAND_HELP[cmd])
             else:
-                send_message(message.channel, '"{0}" is not a valid command.'.format(cmd))
+                send_message(message.channel, onSyntaxError('help', cmd + ' is not a valid command.'))
 
         # if "help [command]
         else:
             if cmd in COMMAND_HELP.keys():
                 send_message(message.author, COMMAND_HELP[cmd])
             else:
-                send_message(message.channel, '"{0}" is not a valid command.'.format(cmd))
+                send_message(message.channel, onSyntaxError('help', cmd + ' is not a valid command.'))
 
     logging.info('Help has been sent.')
 
@@ -47,12 +47,12 @@ def migrate(message: discord.Message, argstr: str, loop):
     channel1 = None
     channel2 = None
     if len(argstr) == 0:
-        send_message(message.channel, 'Usage: {0}'.format(COMMAND_SYNTAX['migrate']))
+        send_message(message.channel, onSyntaxError('migrate', 'Provide two voice channels as arguments.'))
     else:
         # get args, check for correct number, strip whitespace
         args = argstr.split(',')
         if len(args) < 2:
-            send_message(message.channel, 'Usage: {0}'.format(COMMAND_SYNTAX['migrate']))
+            send_message(message.channel, onSyntaxError('migrate', 'Provide two voice channels as arguments.'))
         else:
             args[0] = args[0].strip()
             args[1] = args[1].strip()
@@ -67,7 +67,7 @@ def migrate(message: discord.Message, argstr: str, loop):
                     if channel1 != None and channel2 != None:
                         break
             else:
-                send_message(message.channel, 'Could not find at least one of the channels specified.')
+                send_message(message.channel, onSyntaxError('migrate', "One or both of the channels provided do not exist. Check your spelling."))
                 return
             # move each member from the first channel to the second channel.
             for member in channel.voice_members:
@@ -86,7 +86,7 @@ def quotes(message: discord.Message, argstr: str, loop):
 
     # if no args, invalid usage.
     if len(argstr) == 0:
-        send_message(message.channel, 'Usage: {0}'.format(COMMAND_SYNTAX['quotes']))
+        send_message(message.channel, onSyntaxError('quotes', ''))
         return
 
     server = message.channel.server
@@ -104,9 +104,9 @@ def quotes(message: discord.Message, argstr: str, loop):
                 send_message(message.channel, '{0}\n\t\t\t-{1}'.format(q[1].replace('\\n', '\n'), q[0]))
                 logging.info("Quote sent by ID.")
             else:
-                send_message(message.channel, '{0} is not a valid quote ID. Use `quotes list` to get quote IDs.'.format(id))
+                send_message(message.channel, onSyntaxError('quotes', str(id) + ' is not a valid quote ID.'))
         else:
-            send_message(message.channel, '{0} is not a valid quote ID. Use `quotes list` to get quote IDs.'.format(id))
+            send_message(message.channel, onSyntaxError('quotes', str(id) + ' is not a valid quote ID.'))
 
     # if "quotes random [author]"
     elif argstr.startswith('random'):
@@ -162,7 +162,7 @@ def quotes(message: discord.Message, argstr: str, loop):
             send_message(message.channel, "Quotes from {0}:\n{1}".format(authorCaps, quoteList.replace('\\n', '\n')))
         logging.info("Sent list of quotes.")
 
-    # if "@quotes add <quote> -author"
+    # if "quotes add <quote -author>"
     elif argstr.startswith('add '):
         if not is_admin(message.author):
             send_message(message.author, "You must be an admin to use this command.")
@@ -173,7 +173,7 @@ def quotes(message: discord.Message, argstr: str, loop):
         match = re.search('( -\w)', args)
 
         if match is None:
-            send_message(message.channel, "Usage: {0}".format(COMMAND_SYNTAX['quotes']))
+            send_message(message.channel, onSyntaxError('quotes', 'To add a quote, include a quote followed by -Author\'s Name.'))
             return
 
         # args[0] = author, args[1] = quote
@@ -202,8 +202,8 @@ def quotes(message: discord.Message, argstr: str, loop):
         id = argstr[len('remove '):].lstrip()
         try:
             id = int(id)
-        except Exception:
-            send_message(message.channel, "{0} is not a valid quote ID.".format(argstr))
+        except TypeError:
+            send_message(message.channel, onSyntaxError('quotes', str(id) + ' is not a valid quote ID.'))
             return
 
         # if id is valid, delete the quote.
@@ -215,11 +215,11 @@ def quotes(message: discord.Message, argstr: str, loop):
                 save_quotes()
                 logging.info("Quote removed.")
             else:
-                send_message(message.channel, "{0} is not a valid quote ID.".format(argstr))
+                send_message(message.channel, onSyntaxError('quotes', str(id) + ' is not a valid quote ID.'))
 
     # if "quotes <unknown args>"
     else:
-        send_message(message.channel, "Unrecognized argument. Usage: {0}".format(COMMAND_SYNTAX['quotes']))
+        send_message(message.channel, onSyntaxError('quotes', 'Unknown sub-command.'))
 
 
 # write relavent info about the provided player's league of legends game
@@ -228,7 +228,7 @@ def lolgame(message: discord.Message, argstr: str, loop):
 
     # check for invalid argument count
     if len(argstr) == 0:
-        send_message(message.channel, "Usage: {0}".format(COMMAND_SYNTAX['lolgame']))
+        send_message(message.channel, onSyntaxError('lolgame', 'You must provide a summoner name.'))
         return
 
     args = argstr.split(',')
@@ -490,7 +490,7 @@ def youtube(message: discord.Message, argstr: str, loop):
 
     # check for missing args
     if len(argstr) == 0:
-        send_message(message.channel, "Usage: {0}".format(COMMAND_SYNTAX['yt']))
+        send_message(message.channel, onSyntaxError('yt', 'You must provide a query to search for.'))
         return
 
     # get the search results
@@ -517,7 +517,7 @@ def image(message: discord.Message, argstr: str, loop):
 
     # check for missing args
     if len(argstr) == 0:
-        send_message(message.channel, "Usage: {0}".format(COMMAND_SYNTAX['img']))
+        send_message(message.channel, onSyntaxError('img', 'You must provide a query to search for.'))
         return
 
     # get the search results
@@ -581,17 +581,16 @@ def suggest(message: discord.Message, argstr: str, loop):
         send_message(message.channel, 'Your suggestion has been noted!')
         logging.info('Suggestion has been noted.')
     else:
-        send_message(message.channel, 'Usage: {0}'.format(COMMAND_SYNTAX['suggest']))
+        send_message(message.channel, onSyntaxError('suggest', 'You should probably suggest something.'))
 
 
 # enable/disable nsfw content in google searches
 def nsfw(message: discord.Message, argstr: str, loop):
     logging.info('Command: nsfw')
     if message.channel.is_private:
-        if not is_owner(message.author):
-            send_message(message.author, "You must be the owner to use this command here.")
-            return
-    elif not is_admin(message.channel.server, message.author):
+        send_message(message.author, "You can only use this command on a server.")
+        return
+    elif not is_admin(message.author):
         send_message(message.author, "You must be an admin to use this command.")
         return
 
@@ -609,7 +608,7 @@ def nsfw(message: discord.Message, argstr: str, loop):
         else:
             send_message(message.author, "NSFW is OFF")
     else:
-        send_message(message.author, "Usage: {0}".format(COMMAND_SYNTAX['nsfw']))
+        send_message(message.author, onSyntaxError('nsfw', 'Specify on or off.'))
     logging.info('NSFW has been set/queried.')
 
 
@@ -617,7 +616,7 @@ def nsfw(message: discord.Message, argstr: str, loop):
 def admin(message: discord.Message, argstr: str, loop):
     logging.info('Command: admin')
     if len(argstr) == 0:
-        send_message(message.channel, 'Usage: {0}'.format(COMMAND_SYNTAX['admin']))
+        send_message(message.channel, onSyntaxError('admin', ''))
         return
     if message.channel.is_private:
         send_message(message.channel, 'You can only use this command in a server.')
@@ -647,7 +646,7 @@ def admin(message: discord.Message, argstr: str, loop):
 
     # if "admin add"
     elif argstr.startswith('add'):
-        if not is_admin(message.channel.server, message.author):
+        if not is_admin(message.author):
             send_message(message.author, "You must be an admin to use this command.")
             return
 
@@ -676,7 +675,7 @@ def admin(message: discord.Message, argstr: str, loop):
 
     # if "admin remove"
     elif argstr.startswith('remove'):
-        if not is_admin(message.channel.server, message.author):
+        if not is_admin(message.author):
             send_message(message.author, "You must be an admin to use this command.")
             return
         # the output message at the end.
@@ -712,7 +711,7 @@ def logout(message: discord.Message, argstr: str, loop):
     logging.info("Command: logout")
     link_bot.requestedStop = True  # prevent a restart
     if not is_owner(message.author):
-        send_message(message.channel, "You must be the owner to use this command.")
+        send_message(message.channel, "You must be the bot's owner to use this command.")
         return
 
     # disable message reading

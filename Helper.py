@@ -40,23 +40,24 @@ link_bot = LinkBot()
 
 
 COMMAND_SYNTAX = {
-    'help': '`help`   *here*  *command*',
-    'migrate': '`migrate`   **channel 1**,  **channel 2**',
-    'quotes': '`quotes`    __**id**__   __random  *author*__   __list  *author*__   __***add***  **quote**  **-author**__   __***remove***  **id**__',
-    'lolgame': '`lolgame`   **summoner**  *, region*',
-    'yt': '`yt`/`youtube`   **query**',
-    'img': '`img`/`image`   **query**',
+    'help': '`help [here] [command]`',
+    'migrate': '`migrate <channel 1>, <channel 2>`',
+    'quotes': '`quotes <#id>`\t`quotes list [author]`\t`quotes random [author]`\n'
+              '`quotes add <quote -author>`\t`quotes remove <#id>`',
+    'lolgame': '`lolgame <summoner name> [region]`',
+    'yt': '`youtube <query>` or `yt <query>`',
+    'img': '`image <query>` or `img <query>`',
     'play': '`play`',
-    'suggest': '`suggest`  **feature**',
-    'admin': '`admin`   __list__   __***add***  **@member**/**@role**  *...*__   __***remove***  **@member**/**@role**  *...*__',
-    'nsfw': '`nsfw`   *on*|*off*',
-    'logout': '`logout`/`logoff`'
+    'suggest': '`suggest <feature>`',
+    'admin': '`admin list`\t`admin add <@user|@role>`\t`admin remove <@user|@role>`',
+    'nsfw': '`nsfw <on|off>`',
+    'logout': '`logout` or `logoff`'
 }
 
 HELP = '\n' \
        'Argument syntax:  `command`  **mandatory**  *optional*  ***admin only***  __sub command__  option 1/option 2\n' \
        'Command prefix: \'{0}\'\n'\
-       'Use "help *command*" to get more info on a particular command.\n\n' \
+       'Use "{1}" to get more info on a particular command, for example: help quotes\n\n' \
        '-{1}\n-{2}\n-{3}\n-{4}\n-{5}\n-{6}\n-{7}\n-{8}\n-{9}\n-{10}\n-{11}' \
     .format('{0}', COMMAND_SYNTAX['help'], COMMAND_SYNTAX['migrate'], COMMAND_SYNTAX['quotes'],
             COMMAND_SYNTAX['lolgame'], COMMAND_SYNTAX['yt'], COMMAND_SYNTAX['img'], COMMAND_SYNTAX['play'],
@@ -78,9 +79,11 @@ COMMAND_HELP = {
               "{prefix}quotes 21\t\t\t\tWrites the quote with an ID of 21. If you don't know the quote ID, use:\n"
               "{prefix}quotes list\t\t\t\tLists all quotes for the server. You can even filter it for only quotes from a particular author:\n"
               "{prefix}quotes list LocalIdiot\t\t\t\tThis will show all quotes from LocalIdiot.\n"
+              "{prefix}quotes random\t\t\t\tGets a random quote from the server."
+              "{prefix}quotes random Jimbob\t\t\t\tgets a random quote from Jimbob."
               "{prefix}quotes add Hey, it's me! -Dawson\t\t\t\tThis will add \"Hey, it's me\" as a quote from Dawson.\n"
-              "\t\t\t\tYou can separate different parts of a quote using '\\n'. This will insert a new line before the following text. For example:\n"
-              "{prefix}quotes add Dawson: Hey it's me!\\nEveryone: Where'd he go? -Dawson\t\t\t\tYou still need a quote author at the end, so don't forget!\n"
+              "\t\t\t\tYou can separate different parts of a quote using `shift+enter` to start a new line.\n"
+              "\t\t\t\tYou still need a quote author at the end, so don't forget!\n"
               "{prefix}quotes remove 12\t\t\t\tThis will remove the quote that has an ID of 12. Remember to check '{prefix}quotes list' to get the ID!"
         .format(COMMAND_SYNTAX["quotes"], prefix=link_bot.prefix),
     "lolgame": "{0}: Sends info to the channel about `summoner`'s current League of Legends game.\n"
@@ -121,6 +124,11 @@ COMMAND_HELP = {
 client = discord.Client()
 riot_api = RiotAPI.Client(RIOT_API_KEY)
 google_api = GoogleAPI.Client(YOUTUBE_API_KEY)
+
+
+def onSyntaxError(command: str, info: str) -> str:
+    return "{info} Try `{prefix}help {cmd}` for help on how to use {cmd}."\
+        .format(prefix=link_bot.prefix, cmd=command, info=info)
 
 
 def get_name(member: typing.Union[discord.Member, discord.User]):
