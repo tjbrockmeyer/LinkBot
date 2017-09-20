@@ -90,13 +90,11 @@ def load_config():
                 if line.startswith('ownerDiscordId='):  # check for an identifier
                     line = line[len('ownerDiscordId='):].rstrip()  # cut off the identifier
 
-                    for server in client.servers:  # iterate through servers that bot is a part of.
-                        for member in server.members:  # iterate through members on those servers.
-                            if member.id == line:  # if the member has the same id as provided in the config file,
-                                link_bot.owner = member  # set the member as the bot's owner.
-                                continue
-
-                    if link_bot.owner is None:
+                    for member in (server.members for server in client.servers):  # iterate through servers that bot is a part of.
+                        if member.id == line:  # if the member has the same id as provided in the config file,
+                            link_bot.owner = member  # set the member as the bot's owner.
+                            break
+                    else:
                         logging.info("Could not find ownerDiscordId in the members of any server that I'm a part of.")
 
                 elif line.startswith('prefix='):
