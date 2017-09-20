@@ -75,8 +75,8 @@ def migrate(message: discord.Message, argstr: str, loop):
             send_message(message.channel, 'Members in {0} have been migrated to {1}.'.format(channel1.name, channel2.name))
 
 
-# get, list, add or remove quotes for the server
 def quotes(message: discord.Message, argstr: str, loop):
+    """Get, list, add or remove quotes for the server."""
     logging.info('Command: quotes')
 
     # if not on a server, invalid usage.
@@ -162,7 +162,7 @@ def quotes(message: discord.Message, argstr: str, loop):
             send_message(message.channel, "Quotes from {0}:\n{1}".format(authorCaps, quoteList.replace('\\n', '\n')))
         logging.info("Sent list of quotes.")
 
-    # if "@quotes add <author>, <quote>"
+    # if "@quotes add <quote> -author"
     elif argstr.startswith('add '):
         if not is_admin(message.author):
             send_message(message.author, "You must be an admin to use this command.")
@@ -177,13 +177,15 @@ def quotes(message: discord.Message, argstr: str, loop):
             return
 
         # args[0] = author, args[1] = quote
-        args = (args[match.start() + 2:], args[:match.start()])
+        args = (args[match.start() + 2:], args[:match.start()].replace('\n', '\\n'))
 
+        # check to see if there's a missing quote. If so, replace it with the new quote.
         for i in range(0, len(link_bot.quotes[server.id]) - 1):
             if link_bot.quotes[server.id][i][1] == '':
                 link_bot.quotes[server.id][i] = (args[0], args[1])
-                send_message(message.channel, "Added quote with ID {0}".format(i))
+                send_message(message.channel, "Added quote with ID {0}: \n{1} -{2}".format(len(link_bot.quotes[server.id]) - 1, args[1].replace('\\n', '\n'), args[0]))
                 break
+        # if there's not an empty quote, add this quote on the end.
         else:
             link_bot.quotes[server.id].append((args[0], args[1].lstrip()))
             send_message(message.channel, "Added quote with ID {0}: \n{1} -{2}".format(len(link_bot.quotes[server.id]) - 1, args[1].replace('\\n', '\n'), args[0]))
