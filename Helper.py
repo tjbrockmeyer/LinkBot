@@ -23,10 +23,14 @@ class LinkBot:
         self.messages_received = Queue() # type: Queue
         self.lock = threading.RLock() # type: threading.RLock
 
-        # runtime objects
-        self.admins = dict() # type: typing.Dict[int, typing.List[int]]
-        self.quotes = dict() # type: typing.Dict[int, typing.List[typing.Tuple[str, str]]]
-        self.nsfw = dict() # type: typing.Dict[int, bool]
+        # for each server, there is a list of user ids for registered admins.
+        self.admins = dict()
+        # for each server, there is a list of tuples containing (name, quote)
+        self.quotes = dict()
+        # for each server, there is a dictionary of names with a birthday.
+        self.birthdays = dict()
+        # for each server, there is a bool saying whether the nsfw filter is enabled on that server or not.
+        self.nsfw = dict()
 
         # config settings
         self.owner = None # type: typing.Optional[discord.User]
@@ -42,8 +46,9 @@ link_bot = LinkBot()
 COMMAND_SYNTAX = {
     'help': '`help [here] [command]`',
     'migrate': '`migrate <channel 1>, <channel 2>`',
-    'quotes': '`quotes <#id>`\t`quotes list [author]`\t`quotes random [author]`\n'
-              '`quotes add <quote -author>`\t`quotes remove <#id>`',
+    'quote': '`quote <#id>`\t`quote list [author]`\t`quote random [author]`\n'
+              '`quote add <quote -author>`\t`quote remove <#id>`',
+    'birthday': '`birthday list`\t`birthday set <name> <mm/dd>`\t`birthday remove <name>`',
     'lolgame': '`lolgame <summoner name> [region]`',
     'yt': '`youtube <query>` or `yt <query>`',
     'img': '`image <query>` or `img <query>`',
@@ -57,35 +62,42 @@ COMMAND_SYNTAX = {
 HELP = '\n' \
        'Argument syntax:  `command`  **mandatory**  *optional*  ***admin only***  __sub command__  option 1/option 2\n' \
        'Command prefix: \'{0}\'\n'\
-       'Use "{1}" to get more info on a particular command, for example: help quotes\n\n' \
-       '-{1}\n-{2}\n-{3}\n-{4}\n-{5}\n-{6}\n-{7}\n-{8}\n-{9}\n-{10}\n-{11}' \
-    .format('{0}', COMMAND_SYNTAX['help'], COMMAND_SYNTAX['migrate'], COMMAND_SYNTAX['quotes'],
-            COMMAND_SYNTAX['lolgame'], COMMAND_SYNTAX['yt'], COMMAND_SYNTAX['img'], COMMAND_SYNTAX['play'],
-            COMMAND_SYNTAX['suggest'], COMMAND_SYNTAX['admin'], COMMAND_SYNTAX['nsfw'], COMMAND_SYNTAX['logout']) \
+       'Use "{1}" to get more info on a particular command, for example: help quote\n\n' \
+       '-{1}\n-{2}\n-{3}\n-{4}\n-{5}\n-{6}\n-{7}\n-{8}\n-{9}\n-{10}\n-{11}\n-{12}' \
+    .format('{0}', COMMAND_SYNTAX['help'], COMMAND_SYNTAX['migrate'], COMMAND_SYNTAX['quote'],
+            COMMAND_SYNTAX['birthday'],COMMAND_SYNTAX['lolgame'], COMMAND_SYNTAX['yt'], COMMAND_SYNTAX['img'],
+            COMMAND_SYNTAX['play'], COMMAND_SYNTAX['suggest'], COMMAND_SYNTAX['admin'], COMMAND_SYNTAX['nsfw'],
+            COMMAND_SYNTAX['logout'])
 
 COMMAND_HELP = {
     "help": "{0}: Pastes help into a DM with the user who sent the command.\n"
             "{prefix}help here\t\t\t\tWrites the help panel to the channel you asked for it in.\n"
-            "{prefix}help quotes\t\t\t\tGets specific help for the 'quotes' command.\n"
-            "{prefix}help here quotes\t\t\t\tWrites that specific help to the channel you asked for it in."
+            "{prefix}help quote\t\t\t\tGets specific help for the 'quote' command.\n"
+            "{prefix}help here quote\t\t\t\tWrites that specific help to the channel you asked for it in."
         .format(COMMAND_SYNTAX["help"], prefix=link_bot.prefix),
     "migrate": "{0}: Moves all members inside voice channel 1 to voice channel 2.\n"
                "{prefix}migrate BK lounge, The Potion Shop\t\t\t\tMoves everyone in the BK Lounge to the Potion Shop.\n"
                "\t\t\t\tIt's not case sensitive, so you could also use:\n"
                "{prefix}migrate bk lounge, the potion shop\t\t\t\tand it would still work with the same effect."
         .format(COMMAND_SYNTAX["migrate"], prefix=link_bot.prefix),
-    "quotes": "{0}: Get a quote, list them all or add/remove a quote.\n"
-              "Adding or removing quotes is an Admin Only privilege.\n"
-              "{prefix}quotes 21\t\t\t\tWrites the quote with an ID of 21. If you don't know the quote ID, use:\n"
-              "{prefix}quotes list\t\t\t\tLists all quotes for the server. You can even filter it for only quotes from a particular author:\n"
-              "{prefix}quotes list LocalIdiot\t\t\t\tThis will show all quotes from LocalIdiot.\n"
-              "{prefix}quotes random\t\t\t\tGets a random quote from the server."
-              "{prefix}quotes random Jimbob\t\t\t\tgets a random quote from Jimbob."
-              "{prefix}quotes add Hey, it's me! -Dawson\t\t\t\tThis will add \"Hey, it's me\" as a quote from Dawson.\n"
+    "quote": "{0}: Get a quote, list them all or add/remove a quote.\n"
+              "Adding or removing quote is an Admin Only privilege.\n"
+              "{prefix}quote 21\t\t\t\tWrites the quote with an ID of 21. If you don't know the quote ID, use:\n"
+              "{prefix}quote list\t\t\t\tLists all quote for the server. You can even filter it for only quote from a particular author:\n"
+              "{prefix}quote list LocalIdiot\t\t\t\tThis will show all quote from LocalIdiot.\n"
+              "{prefix}quote random\t\t\t\tGets a random quote from the server."
+              "{prefix}quote random Jimbob\t\t\t\tgets a random quote from Jimbob."
+              "{prefix}quote add Hey, it's me! -Dawson\t\t\t\tThis will add \"Hey, it's me\" as a quote from Dawson.\n"
               "\t\t\t\tYou can separate different parts of a quote using `shift+enter` to start a new line.\n"
               "\t\t\t\tYou still need a quote author at the end, so don't forget!\n"
-              "{prefix}quotes remove 12\t\t\t\tThis will remove the quote that has an ID of 12. Remember to check '{prefix}quotes list' to get the ID!"
-        .format(COMMAND_SYNTAX["quotes"], prefix=link_bot.prefix),
+              "{prefix}quote remove 12\t\t\t\tThis will remove the quote that has an ID of 12. Remember to check '{prefix}quote list' to get the ID!"
+        .format(COMMAND_SYNTAX["quote"], prefix=link_bot.prefix),
+    "birthday": "{0}: Set, remove, or list the registered birthdays from the database.\n"
+                "Setting and removing birthdays is an Admin Only privilege.\n"
+                "{prefix}birthday set xCoDGoDx 04/20\t\t\t\tThis will set xCoDGoDx's birthday as April 20th.\n"
+                "{prefix}birthday list\t\t\t\twill list all birthdays that are registered for this server.\n"
+                "{prefix}birthday remove xCoDGoDx\t\t\t\twill remove xCoDGoDx's birthday from the system."
+        .format(COMMAND_SYNTAX["birthday"], prefix=link_bot.prefix),
     "lolgame": "{0}: Sends info to the channel about `summoner`'s current League of Legends game.\n"
                "{prefix}lolgame TheBootyToucher\t\t\t\tLooks up and posts information in the chat about TheBootyToucher's league of legends game.\n"
                "\t\t\t\tSummoner names are not case-sensitive, and they also do not require you to use spaces in the name. Therefore:\n"
@@ -126,23 +138,45 @@ riot_api = RiotAPI.Client(RIOT_API_KEY)
 google_api = GoogleAPI.Client(YOUTUBE_API_KEY)
 
 
-def onSyntaxError(command: str, info: str) -> str:
+def OnSyntaxError(command: str, info: str) -> str:
+    """
+    To be called when there has been a syntax error in a command.
+    Returns info and command formatted into a help string.
+
+    :param command: The command that received a syntax error.
+    :type command: str
+    :param info: Some info as to what went wrong with the syntax.
+    :type info: str
+    :return: A new string with the parameters formatted in.
+    :rtype: str
+    """
     return "{info} Try `{prefix}help {cmd}` for help on how to use {cmd}."\
         .format(prefix=link_bot.prefix, cmd=command, info=info)
 
 
-def get_name(member: typing.Union[discord.Member, discord.User]):
-    if member.nick is not None:
-        return member.nick
-    else:
-        return member.name
+def FormatAsNoSpaces(string):
+    """
+    Returns the same string, but with no spaces in it.
 
-
-def format_as_nospaces(string: str) -> str:
+    :param string: The string to remove spaces from.
+    :type string: str
+    :return: The string with no spaces.
+    :rtype: str
+    """
     return ''.join(string.split())
 
 
-def format_as_column(append: str, column_length: int) -> str:
+def FormatAsColumn(append, column_length):
+    """
+    Returns the append string with spaces added to create a column format.
+
+    :param append: String of text to be formatted.
+    :type append: str
+    :param column_length: Number of characters in this column.
+    :type column_length: int
+    :return: The newly formatted string.
+    :rtype: str
+    """
     add_spaces = column_length - len(append)
     while add_spaces > 0:
         append += ' '
@@ -150,24 +184,39 @@ def format_as_column(append: str, column_length: int) -> str:
     return append
 
 
-def format_as_lol_player_output(player: InGameSummoner) -> str:
-    string = format_as_column(player.summoner.name, 17)\
-        + format_as_column(player.rank, 15)\
-        + format_as_column(str(player.lp), 6)\
-        + format_as_column(player.series, 6)\
-        + format_as_column(player.champion.idealized, 15)\
-        + format_as_column(str(player.games_champ), 6)\
-        + format_as_column(str(player.win_rate_champ) + '%', 5)\
-        + format_as_column(str(player.kda_champ), 6)\
-        + format_as_column(str(player.games), 6)\
-        + format_as_column(str(player.win_rate) + '%', 8)\
-        + format_as_column(str(player.kda), 5)\
-        + '\n'
+def FormatAsLoLPlayerOutput(player):
+    """
+    Formats a player's in-game information into columns for outputting in monospace.
+
+    :param player: The player whose output should be formatted.
+    :type player: InGameSummoner
+    :return: A string with the formatting applied.
+    :rtype: str
+    """
+    string = FormatAsColumn(player.summoner.name, 17) \
+             + FormatAsColumn(player.rank, 15) \
+             + FormatAsColumn(str(player.lp), 6) \
+             + FormatAsColumn(player.series, 6) \
+             + FormatAsColumn(player.champion.idealized, 15) \
+             + FormatAsColumn(str(player.games_champ), 6) \
+             + FormatAsColumn(str(player.win_rate_champ) + '%', 5) \
+             + FormatAsColumn(str(player.kda_champ), 6) \
+             + FormatAsColumn(str(player.games), 6) \
+             + FormatAsColumn(str(player.win_rate) + '%', 8) \
+             + FormatAsColumn(str(player.kda), 5) \
+             + '\n'
     return string
 
 
-def is_admin(member: discord.Member) -> bool:
-    if is_owner(member):
+def IsAdmin(member):
+    """
+    Checks if the member is an admin.
+
+    :param discord.Member member: Member to check if they're an admin.
+    :return: True if the member is an admin, False otherwise.
+    :rtype: bool
+    """
+    if IsOwner(member):
         return True
     if member.server.id not in link_bot.admins.keys():
         link_bot.admins[member.server.id] = list()
@@ -175,5 +224,12 @@ def is_admin(member: discord.Member) -> bool:
     return member.id in link_bot.admins[member.server.id]
 
 
-def is_owner(user: discord.User) -> bool:
+def IsOwner(user):
+    """
+    Checks if the user is the bot's owner.
+
+    :param discord.User user:
+    :return: True if the user is the bot's owner, False otherwise.
+    :rtype: bool
+    """
     return user.id == link_bot.owner.id

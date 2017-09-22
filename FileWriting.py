@@ -1,6 +1,7 @@
 import os
 import logging
 from Helper import link_bot, client
+from datetime import datetime
 
 
 CURRENT_WORKING_DIRECTORY = os.getcwd()
@@ -9,9 +10,10 @@ FULL_PATH = os.path.realpath(__file__)
 DATA_FOLDER = 'data/'
 
 CONFIG_FILE = 'config.cfg'
-ADMIN_FILE = 'admins.txt'
 SUGGESTION_FILE = 'suggestions.txt'
+ADMIN_FILE = 'admins.txt'
 QUOTES_FILE = 'quotes.txt'
+BIRTHDAYS_FILE = 'birthdays.txt'
 
 
 # create a default config file with documentation.
@@ -161,3 +163,26 @@ def load_quotes():
                         link_bot.quotes[q[0]] = list()
                     link_bot.quotes[q[0]].append((q[1], q[2]))
             logging.info("Quotes loaded from file.")
+
+
+def save_birthdays():
+    with link_bot.lock:
+        with open(DATA_FOLDER + BIRTHDAYS_FILE, 'w') as birthdays:
+            for s, pb in link_bot.quotes.items():
+                for p, b in pb:
+                    # save as: server;author;quote
+                    birthdays.write(s + ';' + p + ';' + b.strftime("%m/%d") + '\n')
+    logging.info("Saved birthday file.")
+
+
+def load_birthdays():
+    with link_bot.lock:
+        if os.path.isfile(DATA_FOLDER + BIRTHDAYS_FILE):
+            with open(DATA_FOLDER + BIRTHDAYS_FILE, 'r') as birthdays:
+                for line in birthdays:
+                    b = line.strip().split(';')
+                    # b = server id, person name, birthday
+                    if b[0] not in link_bot.quotes.keys():
+                        link_bot.birthdays[b[0]] = dict()
+                    link_bot.birthdays[b[0]][b[1]] = datetime.strptime(b[2], "%m/%d")
+            logging.info("Birthdays loaded from file.")

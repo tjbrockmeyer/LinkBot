@@ -46,14 +46,14 @@ def main():
 
 
 # adds a message that is to be sent to the message queue. The message is then sent by the send message thread.
-def send_message(destination: Union[discord.Channel, discord.Member, discord.User], message: str):
+def SendMessage(destination: Union[discord.Channel, discord.Member, discord.User], message: str):
     link_bot.messages_to_send.put((destination, message))
 
 
 # sends a message the the owner containing details on some error. Does nothing if there is no owner.
-def send_error_message(message: str):
-    if link_bot.owner != None:
-        send_message(link_bot.owner, message)
+def SendErrorMessage(message: str):
+    if link_bot.owner is not None:
+        SendMessage(link_bot.owner, message)
     logging.error(message)
 
 
@@ -68,7 +68,7 @@ def thread_discord_bot():
         except Exception as e:
             logging.info("An Exception occurred. {0}".format(e))
 
-            if link_bot.encounteredError == False:
+            if not link_bot.encounteredError:
                 link_bot.encounteredError = True
                 link_bot.error = e
 
@@ -113,7 +113,7 @@ async def on_ready():
         await client.change_presence(game=discord.Game(name="{0}help".format(link_bot.prefix)))
 
     logging.info('Logged in as {0} with ID: {1}'.format(client.user.name, client.user.id))
-    if link_bot.owner != None:
+    if link_bot.owner is not None:
         logging.info('Owner is {0}'.format(link_bot.owner.name))
     else:
         logging.info('Owner is not specified.')
@@ -135,7 +135,7 @@ async def on_ready():
 
     # if an error occurred previously that caused the bot to restart, write a message about it.
     if link_bot.encounteredError:
-        send_error_message("An error occurred, causing a restart. "
+        SendErrorMessage("An error occurred, causing a restart. "
                            "Other errors may have followed, but this is the original: \n{0}".format(link_bot.error))
         link_bot.encounteredError = False
         link_bot.error = None
@@ -178,8 +178,10 @@ async def on_message(message: discord.Message):
                 run_command(Commands.help, message, argstr, 'help')
             elif command == 'migrate':
                 run_command(Commands.migrate, message, argstr, 'migrate')
-            elif command == 'quotes':
-                run_command(Commands.quotes, message, argstr, 'quotes')
+            elif command == 'quote':
+                run_command(Commands.quote, message, argstr, 'quote')
+            elif command == 'birthday':
+                run_command(Commands.birthday, message, argstr, 'birthday')
             elif command == 'lolgame':
                 run_command(Commands.lolgame, message, argstr, 'lolgame')
             elif command == 'yt' or command == 'youtube':
@@ -194,10 +196,10 @@ async def on_message(message: discord.Message):
                 run_command(Commands.nsfw, message, argstr, 'nsfw')
             elif command == 'admin':
                 run_command(Commands.admin, message, argstr, 'admin')
-            elif (command == 'logout' or command == 'logoff'):
+            elif command == 'logout' or command == 'logoff':
                 run_command(Commands.logout, message, argstr, 'logout')
             else:
-                send_message(message.channel, '"' + command + '" is not a valid command.')
+                SendMessage(message.channel, '"' + command + '" is not a valid command.')
 
 
 if __name__ == "__main__":
