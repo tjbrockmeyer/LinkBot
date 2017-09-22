@@ -159,7 +159,7 @@ def load_quotes():
             with open(DATA_FOLDER + QUOTES_FILE, 'r') as quotes:
                 for line in quotes:
                     q = line.strip().split(';')
-                    if q[0] not in link_bot.quotes.keys():
+                    if q[0] not in link_bot.quotes:
                         link_bot.quotes[q[0]] = list()
                     link_bot.quotes[q[0]].append((q[1], q[2]))
             logging.info("Quotes loaded from file.")
@@ -168,7 +168,7 @@ def load_quotes():
 def save_birthdays():
     with link_bot.lock:
         with open(DATA_FOLDER + BIRTHDAYS_FILE, 'w') as birthdays:
-            for s, pb in link_bot.quotes.items():
+            for s, pb in link_bot.birthdays.items():
                 for p, b in pb:
                     # save as: server;author;quote
                     birthdays.write(s + ';' + p + ';' + b.strftime("%m/%d") + '\n')
@@ -182,7 +182,7 @@ def load_birthdays():
                 for line in birthdays:
                     b = line.strip().split(';')
                     # b = server id, person name, birthday
-                    if b[0] not in link_bot.quotes.keys():
+                    if b[0] not in link_bot.birthdays:
                         link_bot.birthdays[b[0]] = dict()
                     link_bot.birthdays[b[0]][b[1]] = datetime.strptime(b[2], "%m/%d")
             logging.info("Birthdays loaded from file.")
