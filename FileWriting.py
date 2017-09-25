@@ -1,14 +1,10 @@
 import os
-import logging
-from Helper import link_bot, client
 from datetime import datetime
 
+from Helper import *
 
-CURRENT_WORKING_DIRECTORY = os.getcwd()
-FULL_PATH = os.path.realpath(__file__)
 
 DATA_FOLDER = 'data/'
-
 CONFIG_FILE = 'config.cfg'
 SUGGESTION_FILE = 'suggestions.txt'
 ADMIN_FILE = 'admins.txt'
@@ -92,9 +88,14 @@ def load_config():
                 if line.startswith('ownerDiscordId='):  # check for an identifier
                     line = line[len('ownerDiscordId='):].rstrip()  # cut off the identifier
 
-                    for member in (server.members for server in client.servers):  # iterate through servers that bot is a part of.
-                        if member.id == line:  # if the member has the same id as provided in the config file,
-                            link_bot.owner = member  # set the member as the bot's owner.
+                    found = False
+                    for server in link_bot.discordClient.servers:
+                        for member in server.members:  # iterate through servers that bot is a part of.
+                            if member.id == line:  # if the member has the same id as provided in the config file,
+                                link_bot.owner = member  # set the member as the bot's owner.
+                                found = True
+                                break
+                        if found:
                             break
                     else:
                         logging.info("Could not find ownerDiscordId in the members of any server that I'm a part of.")
@@ -169,7 +170,7 @@ def save_birthdays():
     with link_bot.lock:
         with open(DATA_FOLDER + BIRTHDAYS_FILE, 'w') as birthdays:
             for s, pb in link_bot.birthdays.items():
-                for p, b in pb:
+                for p, b in pb.items():
                     # save as: server;author;quote
                     birthdays.write(s + ';' + p + ';' + b.strftime("%m/%d") + '\n')
     logging.info("Saved birthday file.")
