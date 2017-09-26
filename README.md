@@ -11,6 +11,7 @@ To get LinkBot to run, you'll need a Sensitive.py file. This file contains a few
 - DISCORD_API_KEY: Your Discord API key. You can get one by going [here](https://discordapp.com/developers/applications/me/) and creating a new Discord application.
 - RIOT_API_KEY: Your Riot Games API key. You can get one by going [here](https://developer.riotgames.com/) and signing up as a developer.
 - GOOGLE_API_KEY: Your Google API key. You can get one by following the instructions [here](https://support.google.com/googleapi/answer/6158862?hl=en).
+
 These two are optional, as they are part of an automatic role-assignment operation that I implemented for myself:
 - MY_SERVER_ID: ID of the server in which you would like to set new members' role to a default role.
 - ENTRY_LEVEL_ROLE_ID: ID of the default role for that server.
