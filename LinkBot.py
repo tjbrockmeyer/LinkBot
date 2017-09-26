@@ -11,6 +11,32 @@ import RiotAPI
 
 
 class LinkBot:
+    """
+
+    :active: (bool = False)
+    :isStopping: (bool = False)
+    :requestedStop: (bool = False)
+
+    :encounteredError: (bool = False)
+    :error: (Exception = None)
+    :debug: (bool = False)
+
+    :messages_to_send: (Queue[(channel/user/member, str, Embed)])
+    :messages_received: (Queue[Message])
+    :lock: (threading.RLock)
+
+    :discordClient: (discord.Client)
+    :googleClient: (GoogleAPI.Client)
+    :riotClient: (RiotAPI.Client)
+
+    :admins: (dict[int, list[str]]) Dict with server IDs matching to lists of user IDs. Identifies admins for a server.
+    :quotes: (dict[int, (str, str)]) Dict with server IDs matching to (name, quote) pairs. Identifies quotes for a server.
+    :birthdays: (dict[int, dict[str, datetime]]) Dict with server IDs matching to Dicts which have names matching to birthdays.
+    :nsfw: (dict[int, bool]) Dict with server IDs matching to bools that state the status of the NSFW filter for that server.
+
+    :owner: (User = None) Owner of the bot. Has access to owner-only commands and admin-only commands.
+    :prefix: (str = "link.")
+    """
     def __init__(self, google_api_key, riot_api_key):
         # setting this false along with isStopping will terminate the message sending thread.
         self.active = False
@@ -31,13 +57,9 @@ class LinkBot:
         self.googleClient = GoogleAPI.Client(google_api_key)
         self.riotClient = RiotAPI.Client(riot_api_key)
 
-        # for each server, there is a list of user ids for registered admins.
         self.admins = dict()
-        # for each server, there is a list of tuples containing (name, quote)
         self.quotes = dict()
-        # for each server, there is a dictionary of names with a birthday.
         self.birthdays = dict()
-        # for each server, there is a bool saying whether the nsfw filter is enabled on that server or not.
         self.nsfw = dict()
 
         # config settings
@@ -98,7 +120,13 @@ class LinkBot:
         logging.info("Send Message thread started.")
         while not self.messages_to_send.empty() or not self.isStopping or self.active:
             packet = self.messages_to_send.get()
-            logging.info('Sending message to {0}: {1}.'.format(packet[0], packet[1]))
-            asyncio.run_coroutine_threadsafe(self.discordClient.send_message(
-                packet[0], ("`[DEBUG]` " + packet[1] if self.debug else packet[1])), loop)
+            logging.info('Sending message ' +
+                         ('with embed ' if packet[2] is not None else '') +
+                         'to {0}: {1}'.format(packet[0], packet[1]))
+            if packet[2] is None:
+                asyncio.run_coroutine_threadsafe(self.discordClient.send_message(
+                    packet[0], ("`[DEBUG]` " + packet[1] if self.debug else packet[1])), loop)
+            else:
+                asyncio.run_coroutine_threadsafe(self.discordClient.send_message(
+                    packet[0], ("`[DEBUG]` " + packet[1] if self.debug else packet[1]), embed=packet[2]), loop)
         time.sleep(1)  # wait for any final commands to send.

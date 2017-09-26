@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 import discord
 
@@ -51,6 +52,18 @@ async def on_ready():
             for member in server.members:
                 if len(member.roles) == 1:
                     await link_bot.discordClient.add_roles(member, entry_level_role)
+
+    if not link_bot.debug:
+        today = datetime.now()
+        for server in link_bot.discordClient.servers:
+            if server.id in link_bot.birthdays:
+                for p, b in link_bot.birthdays[server.id].items():
+                    if b.day == today.day and b.month == today.month:
+                        await link_bot.discordClient.send_message(
+                            discord.utils.get(server.channels, is_default=True),
+                            "@everyone Today is {0}'s birthday! Happy Birthday {0}!".format(p)
+                        )
+
 
     link_bot.active = True
     logging.info('Bot is ready.')

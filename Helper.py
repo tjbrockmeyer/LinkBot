@@ -11,13 +11,13 @@ from Bot import link_bot
 # runs commandFunc on a new thread, passing it message and argstr. name becomes the name of the thread.
 def RunCommand(cmd):
     cmd.loop = asyncio.get_event_loop()
-    commandThread = threading.Thread(name='cmd_' + cmd.command, target=cmd.info['func'], args=(cmd,))
+    commandThread = threading.Thread(name='cmd_' + cmd.command, target=cmd.info.func, args=(cmd,))
     commandThread.start()
 
 
 # adds a message that is to be sent to the message queue. The message is then sent by the send message thread.
-def SendMessage(destination, message):
-    link_bot.messages_to_send.put((destination, message))
+def SendMessage(destination, message='', embed=None):
+    link_bot.messages_to_send.put((destination, message, embed))
 
 
 # sends a message the the owner containing details on some error. Does nothing if there is no owner.
