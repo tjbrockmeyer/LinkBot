@@ -4,7 +4,7 @@ from datetime import datetime
 import discord
 
 from Helper import SendMessage, SendErrorMessage, RunCommand
-from Sensitive import PAULS_SERVER_ID, ENTRY_LEVEL_ROLE_ID
+from Sensitive import MY_SERVER_ID, ENTRY_LEVEL_ROLE_ID
 from Bot import link_bot
 
 
@@ -47,7 +47,7 @@ async def on_ready():
 
     # IN MEN OF THE NORTH, SET ALL NO-ROLE PEOPLE TO ENTRY-LEVEL ROLE
     for server in link_bot.discordClient.servers:
-        if server.id == PAULS_SERVER_ID:
+        if server.id == MY_SERVER_ID:
             entry_level_role = discord.utils.get(server.roles, id=ENTRY_LEVEL_ROLE_ID)
             for member in server.members:
                 if len(member.roles) == 1:
@@ -80,7 +80,7 @@ async def on_ready():
 @link_bot.discordClient.event
 async def on_member_join(member):
     # ON MEMBER JOIN "MEN OF THE NORTH"
-    if member.server.id is PAULS_SERVER_ID:  # check for 'is paul's server'
+    if member.server.id is MY_SERVER_ID:  # check for 'is paul's server'
         role = discord.utils.get(member.server.roles, id=ENTRY_LEVEL_ROLE_ID)  # find entry level role
         await link_bot.discordClient.add_roles(member, role)  # assign it
 
