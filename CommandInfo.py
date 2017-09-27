@@ -149,10 +149,8 @@ COMMANDS = {
         'examples': [
             {'command': "{prefix}migrate BK lounge, The Potion Shop",
             'effect': "Moves everyone in the BK Lounge to the Potion Shop."},
-            {'command': "",
-            'effect': "It's not case sensitive, so you could also use:"},
             {'command': "{prefix}migrate bk lounge, the potion shop",
-            'effect': "and it would still work with the same effect."}
+            'effect': "It's not case sensitive, so this would still work with the same effect."}
         ]
     },
     'quote': {
@@ -256,8 +254,22 @@ COMMANDS = {
         'syntax': ["nsfw <on|off>"],
         'description': "View the state of the NSFW filter, turn it on/off.",
         'examples': [
-            {'command': "nsfw on",
+            {'command': "{prefix}nsfw on",
              'effect': "Turns on the NSFW filter for this server."}
+        ]
+    },
+    'unpause': {
+        'alias': 'pause'
+    },
+    'pause': {
+        'func': cmd_pause,
+        'syntax': ["pause", "unpause"],
+        'description': "Pause or unpause the bot. Pausing will prevent the bot from receiving commands until unpaused.",
+        'examples': [
+            {'command': "{prefix}pause",
+             'effect': "Pauses the bot, preventing command processing."},
+            {'command': "{prefix}unpause",
+             'effect': "Unpauses the bot, allowing commands to be processed."}
         ]
     },
     'admin': {

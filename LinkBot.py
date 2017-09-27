@@ -13,9 +13,11 @@ import RiotAPI
 class LinkBot:
     """
 
-    :active: (bool = False)
-    :isStopping: (bool = False)
-    :requestedStop: (bool = False)
+    :active: (bool = False) Setting this false along with isStopping will terminate the message sending thread.
+    :isStopping: (bool = False) Setting this to true will stop the retrieval of messages, and the program will wait for command threads to terminate.
+    :requestedStop: (bool = False) If the bot is not active, but the stop was not requested, the bot will restart.
+
+    :paused: (bool = False)
 
     :encounteredError: (bool = False)
     :error: (Exception = None)
@@ -38,12 +40,11 @@ class LinkBot:
     :prefix: (str = "link.")
     """
     def __init__(self, google_api_key, riot_api_key):
-        # setting this false along with isStopping will terminate the message sending thread.
         self.active = False
-        # setting this to true will stop the retrieval of messages, and the program will wait for command threads to terminate.
         self.isStopping = False
-        # if the bot is not active, but the stop was not requested, the bot will restart.
         self.requestedStop = False
+
+        self.paused = False
 
         self.encounteredError = False
         self.error = None

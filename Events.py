@@ -3,6 +3,8 @@ from datetime import datetime
 
 import discord
 
+from FileWriting import load_config, load_admins, load_quotes, load_birthdays
+from Command import Command
 from Helper import SendMessage, SendErrorMessage, RunCommand
 from Sensitive import MY_SERVER_ID, ENTRY_LEVEL_ROLE_ID
 from Bot import link_bot
@@ -11,8 +13,6 @@ from Bot import link_bot
 # some initialization and setting members with no role to the entry level role [Paul's server only]
 @link_bot.discordClient.event
 async def on_ready():
-    from FileWriting import load_config, load_admins, load_quotes, load_birthdays
-
     # read various files and set their values in the program.
     with link_bot.lock:
         load_config()
@@ -88,7 +88,6 @@ async def on_member_join(member):
 # gets a message, splits it into (command, argstr), then starts the command on a new thread.
 @link_bot.discordClient.event
 async def on_message(message):
-    from Command import Command
     if not link_bot.isStopping and message.author.id != link_bot.discordClient.user.id:
         logging.info("Received a message from " + message.author.name)
 
@@ -96,7 +95,8 @@ async def on_message(message):
 
         # if the message has the prefix or the channel is private, then the message is targeted at the bot.
         if cmd.hasPrefix or cmd.channel.is_private:
-            if cmd.isValid:
-                RunCommand(cmd)
-            else:
-                SendMessage(message.channel, '"' + cmd.command + '" is not a valid command.')
+            if not link_bot.paused or (link_bot.paused and cmd.command.lower() == 'unpause'):
+                if cmd.isValid:
+                    RunCommand(cmd)
+                else:
+                    SendMessage(message.channel, '"' + cmd.command + '" is not a valid command.')
