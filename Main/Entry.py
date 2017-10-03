@@ -1,7 +1,8 @@
 import logging
 
-from Events import link_bot
+from Main.Events import link_bot
 from Sensitive import DISCORD_API_KEY
+
 
 def main():
     logging.basicConfig(level=logging.INFO,

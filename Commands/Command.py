@@ -1,6 +1,7 @@
-from CommandFuncs import *
+from Commands.CommandInfo import CommandInfo
 
-import CommandInfo
+from Main.Bot import link_bot
+from Main.Helper import SendMessage, OnSyntaxError
 
 
 class Command:

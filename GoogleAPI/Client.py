@@ -28,7 +28,8 @@ class Client:
             self.yt_safe_search = 'none'
             self.custom_search_safe = 'off'
 
-    def base_yt_url(self):
+    @staticmethod
+    def base_yt_url():
         return GOOGLE_API_URL_BASE + YOUTUBE_API_URL_EXT
 
     def search_for_video(self, query, max_results=5):
@@ -43,7 +44,8 @@ class Client:
             })
         )
 
-    def base_google_search_url(self):
+    @staticmethod
+    def base_google_search_url():
         return GOOGLE_API_URL_BASE + CUSTOM_SEARCH_URL_EXT
 
     def google_image_search(self, query):

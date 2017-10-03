@@ -1,8 +1,7 @@
 import os
 from datetime import datetime
 
-from Helper import *
-
+from Main.Helper import *
 
 DATA_FOLDER = 'data/'
 CONFIG_FILE = 'config.cfg'

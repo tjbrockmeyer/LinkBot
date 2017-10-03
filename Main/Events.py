@@ -2,12 +2,12 @@ import logging
 from datetime import datetime
 
 import discord
+from Commands.Command import Command
 
-from FileWriting import load_config, load_admins, load_quotes, load_birthdays
-from Command import Command
-from Helper import SendMessage, SendErrorMessage, RunCommand
+from Main.Bot import link_bot
+from Main.FileWriting import load_config, load_admins, load_quotes, load_birthdays
+from Main.Helper import SendMessage, SendErrorMessage, RunCommand
 from Sensitive import MY_SERVER_ID, ENTRY_LEVEL_ROLE_ID
-from Bot import link_bot
 
 
 # some initialization and setting members with no role to the entry level role [Paul's server only]

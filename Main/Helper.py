@@ -1,11 +1,10 @@
-import threading
-import logging
 import asyncio
+import logging
+import threading
 
 import discord
 
-from RiotAPI_classes import InGameSummoner
-from Bot import link_bot
+from Main.Bot import link_bot
 
 
 # runs commandFunc on a new thread, passing it message and argstr. name becomes the name of the thread.
