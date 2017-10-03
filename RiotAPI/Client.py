@@ -2,7 +2,7 @@ import requests
 import time
 import sys
 from collections import deque
-from RiotAPI_consts import *
+from RiotAPI.Consts import *
 
 
 def wait_with_updates(wait_time):

@@ -3,7 +3,8 @@ import re
 import time
 from datetime import datetime
 
-import RiotAPI_classes, RiotAPI_consts
+from RiotAPI.Classes import *
+from RiotAPI.Consts import *
 from FileWriting import SUGGESTION_FILE, DATA_FOLDER
 from FileWriting import update_config, save_admins, save_quotes, save_birthdays
 from Helper import *
@@ -405,7 +406,7 @@ def cmd_lolgame(cmd):
 
     # set region
     if arg_region is not '':
-        if arg_region in RiotAPI_consts.PLATFORMS:
+        if arg_region in PLATFORMS:
             link_bot.riotClient.region = arg_region
     else:
         link_bot.riotClient.region = 'na'
@@ -423,7 +424,7 @@ def cmd_lolgame(cmd):
                              "\n" + api_request.url)
             SendMessage(cmd.channel, "An error occurred. Aborting the lookup.")
         return
-    summoner = RiotAPI_classes.Summoner(api_request.json[arg_summoner])
+    summoner = Summoner(api_request.json[arg_summoner])
 
     # get summoner's game
     api_request = link_bot.riotClient.get_current_game(summoner.id)
@@ -453,7 +454,7 @@ def cmd_lolgame(cmd):
     # organize json into a list of InGameSummoners
     players = []
     for participant in playergame['participants']:
-        player = RiotAPI_classes.InGameSummoner()
+        player = InGameSummoner()
         player.id = participant['summonerId']
         player.champ_id = participant['championId']
         player.team = participant['teamId']
@@ -480,7 +481,7 @@ def cmd_lolgame(cmd):
     # get each summoner's info
     for player in players:
         if str(player.id) in player_list:
-            player.summoner = RiotAPI_classes.Summoner(player_list[str(player.id)])
+            player.summoner = Summoner(player_list[str(player.id)])
 
     # get full list of champions in league of legends
     api_request = link_bot.riotClient.get_all_champion_data(True)
@@ -495,7 +496,7 @@ def cmd_lolgame(cmd):
     for player in players:
 
         # get player champion information
-        player.champion = RiotAPI_classes.Champion(full_champ_list[str(player.champ_id)])
+        player.champion = Champion(full_champ_list[str(player.champ_id)])
 
         # get player champion ranked stats
         acs = link_bot.riotClient.get_champion_stats(player.id)
@@ -614,9 +615,9 @@ def cmd_lolgame(cmd):
     # begin formatting output
     gamestring += '```League of Legends Game for {0}:\n' \
                   '{1} {2} on {3}\n\n'.format(summoner.name,
-                                              RiotAPI_consts.GAME_MODES[playergame['gameMode']],
-                                              RiotAPI_consts.QUEUE_TYPES[playergame['gameQueueConfigId']]['idealized'],
-                                              RiotAPI_consts.MAPS[playergame['mapId']]) \
+                                              GAME_MODES[playergame['gameMode']],
+                                              QUEUE_TYPES[playergame['gameQueueConfigId']]['idealized'],
+                                              MAPS[playergame['mapId']]) \
                   + FormatAsColumn(' ', 58) \
                   + FormatAsColumn('|   Champion   | |', 17) \
                   + FormatAsColumn(' In Queue | |Total|', 16)\
