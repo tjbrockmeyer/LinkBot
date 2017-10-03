@@ -70,25 +70,28 @@ class LinkBot:
         # other settings
         self.lolgame_region = 'na'
 
-
+    # Runs the bot in a multithreaded mode.
     def RunThreaded(self, discord_api_key):
         logging.info('Initializing and logging in...')
 
+        # Create thread that runs the bot.
         botThread = threading.Thread(
             name='DiscordBot', target=self._thread_Bot, args=(discord_api_key,))
         botThread.start()
 
+        # Create the thread that sends messages to channels and users.
         messageSender = threading.Thread(
             name='MSG_Send', target=self._thread_SendMessage, args=(asyncio.get_event_loop(),))
         messageSender.setDaemon(True)
         messageSender.start()
 
-        # wait for the bot to become active.
+        # wait for the bot to become active. Bot becomes active through the BotThread, in the event on_ready.
         while not self.active:
             logging.info('Waiting for bot to start.')
             time.sleep(1)
 
         # while the bot is active, we can do and process other things here.
+        # I was going to have a command line interface, but i haven't felt like getting it working.
         while not self.isStopping:
             # dothingshere.....
             # ...
@@ -103,9 +106,13 @@ class LinkBot:
         logging.info('Bot has been logged out. Closing gracefully.')
 
 
+    # Thread that runs main bot processes.
     def _thread_Bot(self, discord_api_key):
         logging.info("Bot thread started.")
         asyncio.set_event_loop(asyncio.new_event_loop())
+
+        # Until a stop is requested, just keep restarting the bot if errors occur.
+        # I'm pretty sure that Client.run() has an internal try/except that keeps this from doing anything.
         while not self.requestedStop:
             try:
                 self.discordClient.run(discord_api_key)
@@ -119,11 +126,15 @@ class LinkBot:
     # the thread that sends messages
     def _thread_SendMessage(self, loop):
         logging.info("Send Message thread started.")
+
+        # This is a blocking call. Waits for messages to enter the message queue.
         while not self.messages_to_send.empty() or not self.isStopping or self.active:
             packet = self.messages_to_send.get()
             logging.info('Sending message ' +
                          ('with embed ' if packet[2] is not None else '') +
                          'to {0}: {1}'.format(packet[0], packet[1]))
+
+            # Check if the message has an embed. If so, apply it.
             if packet[2] is None:
                 asyncio.run_coroutine_threadsafe(self.discordClient.send_message(
                     packet[0], ("`[DEBUG]` " + packet[1] if self.debug else packet[1])), loop)
