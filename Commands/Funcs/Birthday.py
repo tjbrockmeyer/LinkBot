@@ -1,6 +1,6 @@
 from datetime import datetime
 from Commands.CmdHelper import *
-from Main.FileWriting import save_birthdays
+from Main.FileWriting import save_data
 
 
 # set the birthday for someone, or
@@ -18,8 +18,10 @@ def cmd_birthday(cmd):
         return
 
     # create dict for server if it doesn't exist.
-    if cmd.server.id not in link_bot.birthdays:
-        link_bot.birthdays[cmd.server.id] = dict()
+    if cmd.server.id not in link_bot.data:
+        link_bot.data[cmd.server.id] = {}
+    if 'birthdays' not in link_bot.data[cmd.server.id]:
+        link_bot.data[cmd.server.id]['birthdays'] = {}
 
     # birthday set <person> <birthday>
     if cmd.args[0].lower() == "set":
@@ -65,9 +67,9 @@ def cmd_birthday(cmd):
                             return
 
         # set the birthday for the server and person.
-        link_bot.birthdays[cmd.server.id][cmd.args[1]] = bday
+        link_bot.data[cmd.server.id]['birthdays'][cmd.args[1]] = bday.strftime("%m/%d")
         SendMessage(cmd.channel, "Set birthday of {} to {}.".format(cmd.args[1], bday.strftime("%B %d")))
-        save_birthdays()
+        save_data()
         logging.info("Set birthday.")
 
     # birthday remove <person>
@@ -79,19 +81,20 @@ def cmd_birthday(cmd):
                 'birthday', "Specify a person whose birthday should be removed from the database."))
             return
 
-        if cmd.args[1] not in link_bot.birthdays[cmd.server.id]:
+        if cmd.args[1] not in link_bot.data[cmd.server.id]['birthdays']:
             SendMessage(cmd.channel, "{} doesn't have a registered birthday.".format(cmd.args[1]))
             return
 
-        link_bot.birthdays[cmd.server.id].pop(cmd.args[1])
+        link_bot.data[cmd.server.id]['birthdays'].pop(cmd.args[1])
         SendMessage(cmd.channel, "{}'s birthday successfully removed.".format(cmd.args[1]))
-        save_birthdays()
+        save_data()
         logging.info("Removed birthday.")
 
     # birthday list
     elif cmd.args[0].lower() == "list":
         send_msg = ""
-        for person, bday in link_bot.birthdays[cmd.server.id].items():
+        for person, b in link_bot.data[cmd.server.id]['birthdays'].items():
+            bday = datetime.strptime(b, "%m/%d")
             send_msg += person + ": " + bday.strftime("%B %d") + "\n"
 
         if send_msg == "":

@@ -58,9 +58,7 @@ class LinkBot:
         self.googleClient = GoogleAPI.Client(google_api_key)
         self.riotClient = RiotAPI.Client(riot_api_key)
 
-        self.admins = dict()
-        self.quotes = dict()
-        self.birthdays = dict()
+        self.data = {}
         self.nsfw = dict()
 
         # config settings

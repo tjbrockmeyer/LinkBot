@@ -2,7 +2,7 @@ import random
 import re
 
 from Commands.CmdHelper import *
-from Main.FileWriting import save_quotes
+from Main.FileWriting import save_data
 
 
 # get, list, add or remove quotes from a server.
@@ -20,16 +20,18 @@ def cmd_quote(cmd):
         return
 
     # if there have not been any registered quotes yet, create the list.
-    if not cmd.server.id in link_bot.quotes.keys():
-        link_bot.quotes[cmd.server.id] = list()
+    if not cmd.server.id in link_bot.data:
+        link_bot.data[cmd.server.id] = {}
+    if not 'quotes' in link_bot.data[cmd.server.id]:
+        link_bot.data[cmd.server.id]['quotes'] = []
 
     # if "quote <id>"
     if cmd.args[0].isdigit():
         qid = int(cmd.args[0])
 
         # check that quote id is within bounds
-        if 0 <= qid < len(link_bot.quotes[cmd.server.id]):
-            q = link_bot.quotes[cmd.server.id][qid]
+        if 0 <= qid < len(link_bot.data[cmd.server.id]['quotes']):
+            q = link_bot.data[cmd.server.id]['quotes'][qid]
             if q[1] != '':
                 SendMessage(cmd.channel, '{0}\n\t\t\t-{1}'.format(q[1].replace('\\n', '\n'), q[0]))
                 logging.info("Quote sent by ID.")
@@ -45,7 +47,7 @@ def cmd_quote(cmd):
 
         # compile a list of quotes by the author, or all quotes if not specified.
         quoteChoices = list()
-        for q in link_bot.quotes[cmd.server.id]:
+        for q in link_bot.data[cmd.server.id]['quotes']:
             # if we are looking to get a random quote from any author, or the quote's author is the one we're looking for...
             if q[1] != '' and (authorArg == '' or authorArg == q[0].lower()):
                 quoteChoices.append(q)
@@ -71,7 +73,7 @@ def cmd_quote(cmd):
 
         i = 0
         quoteList = ''
-        for q in link_bot.quotes[cmd.server.id]:
+        for q in link_bot.data[cmd.server.id]['quotes']:
             if q[1] != '' and (authorArg == '' or authorArg == q[0].lower()):
                 quoteList += "`{0}`: {1}   -{2}\n".format(i, q[1], q[0])
             i += 1
@@ -109,24 +111,24 @@ def cmd_quote(cmd):
 
         # q_args[0] = author, q_args[1] = quote
         q_args = (q_args[match.start() + 2:], q_args[:match.start()].replace('\n', '\\n'))
-        print(q_args)
 
         # check to see if there's a missing quote. If so, replace it with the new quote.
-        for i in range(0, len(link_bot.quotes[cmd.server.id])):
-            if link_bot.quotes[cmd.server.id][i][1] == '':
-                link_bot.quotes[cmd.server.id][i] = (q_args[0], q_args[1].lstrip())
+        for i in range(0, len(link_bot.data[cmd.server.id]['quotes'])):
+            if link_bot.data[cmd.server.id]['quotes'][i][1] == '':
+                link_bot.data[cmd.server.id]['quotes'][i] = (q_args[0], q_args[1].lstrip())
                 SendMessage(cmd.channel, "Added quote with ID {0}: \n{1} -{2}"
                             .format(i, q_args[1].replace('\\n', '\n'), q_args[0]))
                 break
 
         # if there's not an empty quote, add this quote on the end.
         else:
-            link_bot.quotes[cmd.server.id].append((q_args[0], q_args[1].lstrip()))
+            link_bot.data[cmd.server.id]['quotes'].append((q_args[0], q_args[1].lstrip()))
             SendMessage(cmd.channel, "Added quote with ID {0}: \n{1} -{2}"
-                        .format(len(link_bot.quotes[cmd.server.id]) - 1, q_args[1].replace('\\n', '\n'), q_args[0]))
+                        .format(len(link_bot.data[cmd.server.id]['quotes']) - 1, q_args[1].replace('\\n', '\n'), q_args[0]))
 
-        save_quotes()
+        save_data()
         logging.info("Added a new quote.")
+
 
     # if "@quote remove <id>@"
     elif cmd.args[0].lower() == "remove":
@@ -148,15 +150,15 @@ def cmd_quote(cmd):
 
         # Range check, and check that the quote author in the system is not blank (a deleted quote)
         if cmd.args[1] < 0 \
-                or cmd.args[1] >= len(link_bot.quotes[cmd.server.id]) \
-                or link_bot.quotes[cmd.server.id][cmd.args[1]][1] == '':
+                or cmd.args[1] >= len(link_bot.data[cmd.server.id]['quotes']) \
+                or link_bot.data[cmd.server.id]['quotes'][cmd.args[1]][1] == '':
             SendMessage(cmd.channel, "That quote ID is not valid. Use 'quote list' to find valid IDs.")
             return
 
-        q = link_bot.quotes[cmd.server.id][cmd.args[1]]
-        link_bot.quotes[cmd.server.id][cmd.args[1]] = ('', '')
+        q = link_bot.data[cmd.server.id]['quotes'][cmd.args[1]]
+        link_bot.data[cmd.server.id]['quotes'][cmd.args[1]] = ('', '')
         SendMessage(cmd.channel, "Quote removed: {0}\n\t\t\t-{1}".format(q[1].replace('\\n', '\n'), q[0]))
-        save_quotes()
+        save_data()
         logging.info("Quote removed.")
 
     # if "quote <unknown args>"

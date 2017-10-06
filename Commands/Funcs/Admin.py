@@ -1,5 +1,5 @@
 from Commands.CmdHelper import *
-from Main.FileWriting import save_admins
+from Main.FileWriting import save_data
 
 # add/remove/list admins for the server in which the cmd was received
 def cmd_admin(cmd):
@@ -15,14 +15,16 @@ def cmd_admin(cmd):
         SendMessage(cmd.channel, 'You can only use this command in a server.')
         return
 
-    if cmd.server.id not in link_bot.admins.keys():
-        link_bot.admins[cmd.server.id] = list()
+    if cmd.server.id not in link_bot.data:
+        link_bot.data[cmd.server.id] = {}
+    if 'admins' not in link_bot.data[cmd.server.id]:
+        link_bot.data[cmd.server.id]['admins'] = []
 
     # if "admin list"
     if cmd.args[0].lower() == "list":
 
         # Check for existing admins
-        if len(link_bot.admins[cmd.server.id]) == 0:
+        if len(link_bot.data[cmd.server.id]['admins']) == 0:
             SendMessage(cmd.channel, 'There are no admins on this server.')
             return
 
@@ -30,7 +32,7 @@ def cmd_admin(cmd):
         admins = 'Admins: '
         needs_comma = False
         for member in cmd.server.members:
-            if member.id in link_bot.admins[cmd.server.id]:
+            if member.id in link_bot.data[cmd.server.id]['admins']:
                 if needs_comma:
                     admins += ', '
                 admins += member.name
@@ -51,23 +53,23 @@ def cmd_admin(cmd):
 
         # if there is a member mention, add them as an admin.
         for member in cmd.message.mentions:
-            if member.id in link_bot.admins[cmd.server.id]:
+            if member.id in link_bot.data[cmd.server.id]['admins']:
                 msg += member.display_name + " is already an admin.\n"
             else:
-                link_bot.admins[cmd.server.id].append(member.id)
+                link_bot.data[cmd.server.id]['admins'].append(member.id)
                 msg += "Added " + member.display_name + " as an admin.\n"
 
         # if there is a role mention, add all members with that role as an admin.
         for role in cmd.message.role_mentions:
             for member in cmd.server.members:
                 if role in member.roles:
-                    if member.id in link_bot.admins[cmd.server.id]:
+                    if member.id in link_bot.data[cmd.server.id]['admins']:
                         msg += member.display_name + " is already an admin.\n"
                     else:
-                        link_bot.admins[cmd.server.id].append(member.id)
+                        link_bot.data[cmd.server.id]['admins'].append(member.id)
                         msg += "Added " + member.display_name + " as an admin.\n"
         # output
-        save_admins()
+        save_data()
         SendMessage(cmd.channel, msg)
         logging.info("Added admins.")
 
@@ -84,23 +86,23 @@ def cmd_admin(cmd):
 
         # if there is a member mention, add them as an admin.
         for member in cmd.message.mentions:
-            if member.id not in link_bot.admins[cmd.server.id]:
+            if member.id not in link_bot.data[cmd.server.id]['admins']:
                 msg += member.display_name + " is not an admin.\n"
             else:
-                link_bot.admins[cmd.server.id].remove(member.id)
+                link_bot.data[cmd.server.id]['admins'].remove(member.id)
                 msg += "Removed " + member.display_name + " from the admin list.\n"
 
         # if there is a role mention, add all members with that role as an admin.
         for role in cmd.message.role_mentions:
             for member in cmd.server.members:
                 if role in member.roles:
-                    if member.id not in link_bot.admins[cmd.server.id]:
+                    if member.id not in link_bot.data[cmd.server.id]['admins']:
                         msg += member.display_name + " is not an admin.\n"
                     else:
-                        link_bot.admins[cmd.server.id].remove(member.id)
+                        link_bot.data[cmd.server.id]['admins'].remove(member.id)
                         msg += "Removed " + member.display_name + " from the admin list.\n"
         # output
-        save_admins()
+        save_data()
         SendMessage(cmd.channel, msg)
         logging.info("Removed admins.")
 

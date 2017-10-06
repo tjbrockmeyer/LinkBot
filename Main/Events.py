@@ -5,7 +5,7 @@ import discord
 from Commands.Command import Command
 
 from Main.Bot import link_bot
-from Main.FileWriting import load_config, load_admins, load_quotes, load_birthdays
+from Main.FileWriting import load_config, load_data
 from Main.Helper import SendMessage, SendErrorMessage, RunCommand
 from Sensitive import MY_SERVER_ID, ENTRY_LEVEL_ROLE_ID
 
@@ -16,9 +16,7 @@ async def on_ready():
     # read various files and set their values in the program.
     with link_bot.lock:
         load_config()
-        load_admins()
-        load_quotes()
-        load_birthdays()
+        load_data()
 
     # load voice module
     # discord.opus.load_opus('opus')
@@ -56,13 +54,13 @@ async def on_ready():
     if not link_bot.debug:
         today = datetime.now()
         for server in link_bot.discordClient.servers:
-            if server.id in link_bot.birthdays:
-                for p, b in link_bot.birthdays[server.id].items():
-                    if b.day == today.day and b.month == today.month:
+            if server.id in link_bot.data and 'birthdays' in link_bot.data[server.id]:
+                for p, b in link_bot.data[server.id]['birthdays'].items():
+                    bday = datetime.strptime(b, "%m/%d")
+                    if bday.day == today.day and bday.month == today.month:
                         await link_bot.discordClient.send_message(
                             discord.utils.get(server.channels, is_default=True),
-                            "@everyone Today is {0}'s birthday! Happy Birthday {0}!".format(p)
-                        )
+                            "@everyone Today is {0}'s birthday! Happy Birthday {0}!".format(p))
 
 
     link_bot.active = True
