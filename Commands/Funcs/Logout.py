@@ -14,7 +14,8 @@ def cmd_logout(cmd):
 
     logging.info('Waiting for command threads to finish.')
     for thread in threading.enumerate():
-        if thread.name.startswith('cmd') and thread.is_alive() and thread.name != 'cmd_logout':
+        if thread.name.startswith('cmd') and thread.is_alive() \
+                and thread is not threading.current_thread():
             logging.info('Currently waiting on: ' + thread.name)
             thread.join()
 
