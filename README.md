@@ -31,7 +31,7 @@ It is in the Command Data dictionary that aliases for commands can be defined. S
 
 ## Adding Commands
 - Create a script for your command in the Commands/Funcs/ directory.
-- Add `from Commands.Funcs.<YourCommand> import <cmd_your_command>` into Commands/Funcs/__init__.py to allow it to be imported automatically into the other files.
+- Add `from Commands.Funcs.<YourCommand> import <cmd_your_command>` into Commands/Funcs/\_\_init\_\_.py to allow it to be imported automatically into the other files.
 - Add `from Commands.CmdHelper.py import *` to the top of your command script to import many of the main requirements for building a command.
 - Write your script.
 - Add any functionality into the main bot files that is required for your command to run.
