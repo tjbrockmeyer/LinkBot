@@ -92,10 +92,20 @@ def cmd_birthday(cmd):
 
     # birthday list
     elif cmd.args[0].lower() == "list":
-        send_msg = ""
-        for person, b in link_bot.data[cmd.server.id]['birthdays'].items():
+        today = datetime.now()
+        bdays = []
+        for p, b in link_bot.data[cmd.server.id]['birthdays'].items():
             bday = datetime.strptime(b, "%m/%d")
-            send_msg += person + ": " + bday.strftime("%B %d") + "\n"
+            if bday.month > today.month or (bday.month == today.month and bday.day >= today.day):
+                bdays.append((p, datetime(today.year, bday.month, bday.day)))
+            else:
+                bdays.append((p, datetime(today.year + 1, bday.month, bday.day)))
+
+        bdays.sort(key=(lambda x: x[1]))
+
+        send_msg = ""
+        for b in bdays:
+            send_msg += b[0] + ": " + b[1].strftime("%B %d") + "\n"
 
         if send_msg == "":
             SendMessage(cmd.channel, "I don't know anyone's birthdays yet.")
