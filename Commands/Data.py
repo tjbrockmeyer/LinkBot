@@ -113,6 +113,31 @@ COMMANDS = {
             'effect': "Bot joins the voice channel with you."}
         ]
     },
+    'deck': {
+        'func': cmd_deck,
+        'syntax': ["deck status", "deck setup preset <preset>", "deck setup (clear|none)",
+                   "deck setup add <list of cards>", "deck setup custom <list of cards>",
+                   "deck shuffle", "deck draw [public]"],
+        'description': "Create a deck of cards and draw from it!",
+        'examples': [
+            {'command': "{prefix}deck status",
+             'effect': "Show how many cards were in the deck at the start, and how many there are now."},
+            {'command': "{prefix}deck setup preset standard",
+             'effect': "Setup a deck with the standard 52 cards and no jokers."},
+            {'command': "{prefix}deck setup clear",
+             'effect': "Throw away all cards in the deck."},
+            {'command': "{prefix}deck setup custom 1 2 3 4 a b c d",
+             'effect': "Create a new deck with the cards being 1, 2, 3, 4, a, b, c, and d."},
+            {'command': "{prefix}deck setup add 5 6 e f",
+             'effect': "Adds 5, 6, e, and f to the currently setup deck."},
+            {'command': "{prefix}deck shuffle",
+             'effect': "Shuffle the current deck."},
+            {'command': "{prefix}deck draw public",
+             'effect': "One card is removed from the deck and is shown in the channel chat."},
+            {'command': "{prefix}deck draw",
+             'effect': "One card is removed from the deck, but public was not specified, so it is shown to you in a DM."}
+        ]
+    },
     'suggest': {
         'func': cmd_suggest,
         'syntax': ["suggest <feature>"],

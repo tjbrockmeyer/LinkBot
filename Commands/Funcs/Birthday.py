@@ -101,7 +101,7 @@ def cmd_birthday(cmd):
             else:
                 bdays.append((p, datetime(today.year + 1, bday.month, bday.day)))
 
-        bdays.sort(key=(lambda x: x[1]))
+        bdays.sort(key=lambda x: x[1])
 
         send_msg = ""
         for b in bdays:

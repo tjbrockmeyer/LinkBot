@@ -54,22 +54,27 @@ def FormatAsNoSpaces(string):
     return ''.join(string.split())
 
 
-def FormatAsColumn(append, column_length):
+def FormatAsColumn(content, column_length, alignment=-1):
     """
     Returns the append string with spaces added to create a column format.
 
-    :param append: String of text to be formatted.
-    :type append: str
+    :param alignment: The alignment of the content in the column. -1 for left, 0 for center, 1 for right.
+    :type alignment: int
+    :param content: String of text to be formatted.
+    :type content: str
     :param column_length: Number of characters in this column.
     :type column_length: int
     :return: The newly formatted string.
     :rtype: str
     """
-    add_spaces = column_length - len(append)
-    while add_spaces > 0:
-        append += ' '
-        add_spaces -= 1
-    return append
+    add_spaces = column_length - len(content)
+    if alignment == 0:
+        left = add_spaces // 2
+        right = add_spaces - left
+        return " " * left + content + " " * right
+    if alignment < 0:
+        return content + " " * add_spaces
+    return " " * add_spaces + content
 
 
 def FormatAsLoLPlayerOutput(player):
@@ -81,17 +86,17 @@ def FormatAsLoLPlayerOutput(player):
     :return: A string with the formatting applied.
     :rtype: str
     """
-    string = FormatAsColumn(player.summoner.name, 17) \
-             + FormatAsColumn(player.rank, 15) \
-             + FormatAsColumn(str(player.lp), 6) \
-             + FormatAsColumn(player.series, 6) \
-             + FormatAsColumn(player.champion.idealized, 15) \
-             + FormatAsColumn(str(player.games_champ), 6) \
-             + FormatAsColumn(str(player.win_rate_champ) + '%', 5) \
-             + FormatAsColumn(str(player.kda_champ), 6) \
-             + FormatAsColumn(str(player.games), 6) \
-             + FormatAsColumn(str(player.win_rate) + '%', 8) \
-             + FormatAsColumn(str(player.kda), 5) \
+    string = FormatAsColumn(player.summoner.name, 17, alignment=1) \
+             + FormatAsColumn(player.rank, 15, alignment=0) \
+             + FormatAsColumn(str(player.lp), 6, alignment=-1) \
+             + FormatAsColumn(player.series, 6, alignment=0) \
+             + FormatAsColumn(player.champion.idealized, 15, alignment=0) \
+             + FormatAsColumn(str(player.games_champ), 6, alignment=-1) \
+             + FormatAsColumn(str(player.win_rate_champ) + '%', 5, alignment=1) \
+             + FormatAsColumn(str(player.kda_champ), 6, alignment=-1) \
+             + FormatAsColumn(str(player.games), 6, alignment=-1) \
+             + FormatAsColumn(str(player.win_rate) + '%', 8, alignment=1) \
+             + FormatAsColumn(str(player.kda), 5, alignment=-1) \
              + '\n'
     return string
 
@@ -106,10 +111,11 @@ def IsAdmin(member):
     """
     if IsOwner(member):
         return True
-    if member.server.id not in link_bot.admins.keys():
-        link_bot.admins[member.server.id] = list()
+    if member.server.id not in link_bot.data:
         return False
-    return member.id in link_bot.admins[member.server.id]
+    if 'admins' not in link_bot.data[member.server.id]:
+        return False
+    return member.id in link_bot.data[member.server.id]['admins']
 
 
 def IsOwner(user):

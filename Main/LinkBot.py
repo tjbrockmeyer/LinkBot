@@ -10,6 +10,14 @@ import GoogleAPI
 import RiotAPI
 
 
+class ServerSideObject:
+    def __init__(self):
+        self.is_nsfw = False
+
+        self.original_deck = []
+        self.deck = []
+
+
 class LinkBot:
     """
 
@@ -31,10 +39,9 @@ class LinkBot:
     :googleClient: (GoogleAPI.Client)
     :riotClient: (RiotAPI.Client)
 
-    :admins: (dict[int, list[str]]) Dict with server IDs matching to lists of user IDs. Identifies admins for a server.
-    :quotes: (dict[int, (str, str)]) Dict with server IDs matching to (name, quote) pairs. Identifies quotes for a server.
-    :birthdays: (dict[int, dict[str, datetime]]) Dict with server IDs matching to Dicts which have names matching to birthdays.
-    :nsfw: (dict[int, bool]) Dict with server IDs matching to bools that state the status of the NSFW filter for that server.
+    :data: (dict) server_id -> { admins, quotes, birthdays }. Permanently stored data.
+    :server_object: (dict of ServerSideObject) Holds session-based server objects. Deleted upon bot logout.
+
 
     :owner: (User = None) Owner of the bot. Has access to owner-only commands and admin-only commands.
     :prefix: (str = "link.")
@@ -59,7 +66,12 @@ class LinkBot:
         self.riotClient = RiotAPI.Client(riot_api_key)
 
         self.data = {}
-        self.nsfw = dict()
+        # { serverID: {
+        #       "admins" : [ userID, ... ],
+        #       "birthdays" : { name : birthday, ...},
+        #       "quotes" : [ ( quote, author ), ... ]
+        # }
+        self.server_object = {}
 
         # config settings
         self.owner = None
@@ -67,6 +79,10 @@ class LinkBot:
 
         # other settings
         self.lolgame_region = 'na'
+
+    def BuildSessionObjects(self):
+        for server in self.discordClient.servers:
+            self.server_object[server] = ServerSideObject()
 
     # Runs the bot in a multithreaded mode.
     def RunThreaded(self, discord_api_key):

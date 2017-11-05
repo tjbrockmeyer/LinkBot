@@ -11,7 +11,7 @@ class Command:
     :message: (discord.Message) The message that was sent.
     :author: (discord.User/discord.Member) The user/member who sent the message.
     :channel: (discord.Channel) The channel that the command was sent in.
-    :server: [discord.Server]The server that the command was issued on. None if the channel is private.
+    :server: [discord.Server] The server that the command was issued on. None if the channel is private.
 
     :hasPrefix: (bool) Whether or not the prefix was attached to the beginning of the message.
     :command: (str) The command that was sent.

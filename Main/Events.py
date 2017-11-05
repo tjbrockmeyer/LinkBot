@@ -23,11 +23,15 @@ async def on_ready():
     # if not discord.opus.is_loaded():
     #    await logging.info('WARNING:\tOpus failed to load. Voice is disabled for this session.')
 
-    if link_bot.debug:
-        await link_bot.discordClient.change_presence(game=discord.Game(name="Getting worked on"))
-        logging.info('Currently running in DEBUG mode. Edit source with DEBUG = False to deactivate.')
-    else:
-        await link_bot.discordClient.change_presence(game=discord.Game(name="{0}help".format(link_bot.prefix)))
+    # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+    # Print out various information about the bot for this session.
+    # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+    # if link_bot.debug:
+    #     await link_bot.discordClient.change_presence(game=discord.Game(name="Getting worked on"))
+    #     logging.info('Currently running in DEBUG mode. Edit source with DEBUG = False to deactivate.')
+    # else:
+    #     await link_bot.discordClient.change_presence(game=discord.Game(name="{0}help".format(link_bot.prefix)))
 
     logging.info('Logged in as {0} with ID: {1}'
                  .format(link_bot.discordClient.user.name, link_bot.discordClient.user.id))
@@ -43,7 +47,10 @@ async def on_ready():
     for server in link_bot.discordClient.servers:
         logging.info('\t{0}'.format(server.name))
 
-    # IN MEN OF THE NORTH, SET ALL NO-ROLE PEOPLE TO ENTRY-LEVEL ROLE
+    # CREATE SERVER-SIDE SESSION OBJECTS
+    link_bot.BuildSessionObjects()
+
+    # IN MY_SERVER, SET ALL NO-ROLE PEOPLE TO ENTRY-LEVEL ROLE.
     for server in link_bot.discordClient.servers:
         if server.id == MY_SERVER_ID:
             entry_level_role = discord.utils.get(server.roles, id=ENTRY_LEVEL_ROLE_ID)
@@ -51,6 +58,7 @@ async def on_ready():
                 if len(member.roles) == 1:
                     await link_bot.discordClient.add_roles(member, entry_level_role)
 
+    # CHECK FOR SOMEONE'S BIRTHDAY BEING TODAY, IF SO, SEND A MESSAGE TO EVERYONE.
     if not link_bot.debug:
         today = datetime.now()
         for server in link_bot.discordClient.servers:

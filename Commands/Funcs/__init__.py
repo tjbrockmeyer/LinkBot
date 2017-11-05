@@ -11,3 +11,4 @@ from Commands.Funcs.Play import cmd_play
 from Commands.Funcs.Quote import cmd_quote
 from Commands.Funcs.Suggest import cmd_suggest
 from Commands.Funcs.Youtube import cmd_youtube
+from Commands.Funcs.Deck import cmd_deck
