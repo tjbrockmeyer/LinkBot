@@ -19,7 +19,19 @@ def cmd_update(cmd: Command):
 
     logging.info("Pulling to: " + os.getcwd())
     g = git.cmd.Git(os.getcwd())
-    g.pull('origin', 'master')
+    try:
+        g.pull('origin', 'master')
+    except Exception as e:
+        logging.info("The local repository has unpushed changes.")
+        if len(cmd.args) > 0 and cmd.args[0].startswith('f'):
+            logging.info("Forcing an overwrite.")
+            g.fetch('--all')
+            g.reset('--hard', 'origin/master')
+            g.pull('origin', 'master')
+        else:
+            SendMessage(cmd.channel,
+                        "There are unpushed changes in the local repository. Use 'update force' to force an overwrite.")
+            return
     logging.info("Pull complete.")
     SendMessage(cmd.channel, "Update complete. Restarting...")
 
