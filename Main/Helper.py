@@ -1,6 +1,8 @@
 import asyncio
 import logging
 import threading
+import traceback
+import sys
 
 import discord
 
@@ -12,6 +14,8 @@ def SafeCommandFunc(cmd):
         cmd.info.func(cmd)
     except Exception as e:
         SendErrorMessage("Exception occurred in `cmd_{}(cmd)`: ```{}```".format(cmd.info.command, e))
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        logging.error(traceback.print_tb(exc_traceback, file=sys.stdout))
 
 
 # runs commandFunc on a new thread, passing it message and argstr. name becomes the name of the thread.
@@ -133,4 +137,4 @@ def IsOwner(user):
     :return: True if the user is the bot's owner, False otherwise.
     :rtype: bool
     """
-    return user.id == link_bot.owner.id
+    return link_bot.owner is not None and user.id == link_bot.owner.id
