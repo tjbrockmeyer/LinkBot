@@ -13,12 +13,12 @@ def cmd_update(cmd: Command):
         return
 
     for thread in threading.enumerate():
-        if thread.name == 'cmd_update':
+        if thread is not threading.current_thread() and (thread.name == 'cmd_update' or thread.name == 'cmd_upgrade'):
             SendMessage(cmd.channel, "Update is already in progress.")
             return
 
-    logging.info("Pulling to: " + os.path.curdir)
-    g = git.cmd.Git(os.path.curdir)
+    logging.info("Pulling to: " + os.getcwd())
+    g = git.cmd.Git(os.getcwd())
     g.pull()
     link_bot.restart = True
     cmd_logout(cmd)

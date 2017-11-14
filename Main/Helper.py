@@ -11,7 +11,7 @@ def SafeCommandFunc(cmd):
     try:
         cmd.info.func(cmd)
     except Exception as e:
-        SendErrorMessage("Exception occurred in {}: {}".format(cmd.info.func, e))
+        SendErrorMessage("Exception occurred in `cmd_{}(cmd)`: ```{}```".format(cmd.info.command, e))
 
 
 # runs commandFunc on a new thread, passing it message and argstr. name becomes the name of the thread.
