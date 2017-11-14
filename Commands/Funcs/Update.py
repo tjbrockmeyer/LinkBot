@@ -19,6 +19,9 @@ def cmd_update(cmd: Command):
 
     logging.info("Pulling to: " + os.getcwd())
     g = git.cmd.Git(os.getcwd())
-    g.pull()
+    g.pull('origin', 'master')
+    logging.info("Pull complete.")
+    SendMessage(cmd.channel, "Update complete. Restarting...")
+
     link_bot.restart = True
     cmd_logout(cmd)

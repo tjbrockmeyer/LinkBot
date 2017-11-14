@@ -19,5 +19,5 @@ def cmd_logout(cmd: Command):
             thread.join()
     logging.info("All threads closed. Logging out.")
 
-    SendMessage(link_bot.owner, "Logging out.")
+    SendMessage(cmd.channel, "Logging out.")
     link_bot.active = False

@@ -112,6 +112,7 @@ class LinkBot:
         logging.info('Bot has been logged out. Closing gracefully.')
 
         if self.restart:
+            logging.info("Restarting...")
             os.execl(sys.executable, sys.executable, *sys.argv)
 
 
