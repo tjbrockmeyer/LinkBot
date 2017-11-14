@@ -2,7 +2,7 @@ from Commands.CmdHelper import *
 from Main.FileWriting import DATA_FOLDER, SUGGESTION_FILE
 
 # suggest a new feature for the bot
-def cmd_suggest(cmd):
+def cmd_suggest(cmd: Command):
     logging.info('Command: suggest')
 
     # Check args exist.

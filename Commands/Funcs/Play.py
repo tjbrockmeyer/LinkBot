@@ -2,7 +2,7 @@ from Commands.CmdHelper import *
 
 # play something in voice chat
 @disabled_command("Not currently implemented")
-def cmd_play(cmd):
+def cmd_play(cmd: Command):
     if cmd.server is None:
         SendMessage(cmd.channel, "This command may only be used in a server.")
         return

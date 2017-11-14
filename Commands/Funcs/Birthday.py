@@ -4,7 +4,7 @@ from Main.FileWriting import save_data
 
 
 # set the birthday for someone, or
-def cmd_birthday(cmd):
+def cmd_birthday(cmd: Command):
     logging.info("Command: birthday")
 
     # if not on a server, invalid usage.

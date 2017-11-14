@@ -6,7 +6,7 @@ from Main.FileWriting import save_data
 
 
 # get, list, add or remove quotes from a server.
-def cmd_quote(cmd):
+def cmd_quote(cmd: Command):
     logging.info('Command: quote')
 
     # if not on a server, invalid usage.

@@ -5,7 +5,7 @@ from Commands.CmdHelper import *
 
 
 # move all members in a particular voice chat to a different one
-def cmd_migrate(cmd):
+def cmd_migrate(cmd: Command):
     logging.info("Command: migrate")
 
     # On Server check.

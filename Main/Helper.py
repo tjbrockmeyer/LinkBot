@@ -7,10 +7,17 @@ import discord
 from Main.Bot import link_bot
 
 
+def SafeCommandFunc(cmd):
+    try:
+        cmd.info.func(cmd)
+    except Exception as e:
+        SendErrorMessage("Exception occurred in {}: {}".format(cmd.info.func, e))
+
+
 # runs commandFunc on a new thread, passing it message and argstr. name becomes the name of the thread.
 def RunCommand(cmd):
     cmd.loop = asyncio.get_event_loop()
-    commandThread = threading.Thread(name='cmd_' + cmd.command, target=cmd.info.func, args=(cmd,))
+    commandThread = threading.Thread(name='cmd_' + cmd.command, target=SafeCommandFunc, args=(cmd,))
     commandThread.start()
 
 

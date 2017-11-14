@@ -1,7 +1,7 @@
 from Commands.CmdHelper import *
 
 # link the first youtube video found using the provided query
-def cmd_youtube(cmd):
+def cmd_youtube(cmd: Command):
     logging.info('Command: youtube')
 
     # check for missing args

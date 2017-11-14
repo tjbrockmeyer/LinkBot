@@ -1,7 +1,6 @@
-from Commands.CommandInfo import CommandInfo
-
 from Main.Bot import link_bot
 from Main.Helper import SendMessage, OnSyntaxError
+import discord
 
 
 class Command:
@@ -24,13 +23,14 @@ class Command:
     :loop: (asyncio.EventLoop?) The asyncio event loop to be used for threadsafe coroutimes.
     """
 
-    def __init__(self, message):
+    def __init__(self, message: discord.Message):
         """
         Parse a message into an attempted command.
 
         :param message: The message to parse.
         :type message: discord.Message
         """
+        from Commands.CommandInfo import CommandInfo
 
         # Get channel and server
         self.channel = message.channel

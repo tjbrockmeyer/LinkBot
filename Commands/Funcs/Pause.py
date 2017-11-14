@@ -1,7 +1,7 @@
 from Commands.CmdHelper import *
 
 # Pause/unpause the bot.
-def cmd_pause(cmd):
+def cmd_pause(cmd: Command):
     logging.info("Command: pause/unpause")
     if not IsOwner(cmd.author):
         SendMessage(cmd.channel, "You must be the owner to use this command.")

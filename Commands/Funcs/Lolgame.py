@@ -6,7 +6,7 @@ from RiotAPI import *
 
 # write relavent info about the provided player's league of legends game
 @disabled_command("Needs updates to follow Riot's API.")
-def cmd_lolgame(cmd):
+def cmd_lolgame(cmd: Command):
     logging.info('Command: lolgame')
 
     # check for invalid argument count

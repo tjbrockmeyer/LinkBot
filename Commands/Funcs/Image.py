@@ -1,7 +1,7 @@
 from Commands.CmdHelper import *
 
 # link the first image found using the provided query
-def cmd_image(cmd):
+def cmd_image(cmd: Command):
     logging.info('Command: image')
 
     # check for missing args

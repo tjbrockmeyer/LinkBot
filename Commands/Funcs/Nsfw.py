@@ -3,7 +3,7 @@ from Main.FileWriting import update_config
 
 # enable/disable nsfw content in google searches
 @disabled_command("Not currently implemented.")
-def cmd_nsfw(cmd):
+def cmd_nsfw(cmd: Command):
     logging.info('Command: nsfw')
     if cmd.server is None:
         SendMessage(cmd.channel, "You can only use this command on a server.")

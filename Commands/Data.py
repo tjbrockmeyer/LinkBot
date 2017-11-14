@@ -187,6 +187,18 @@ COMMANDS = {
             'effect': "Removing admins works the same way."}
         ]
     },
+    'upgrade': {
+        'alias': 'update'
+    },
+    'update': {
+        'func': cmd_update,
+        'syntax': ["update", "upgrade"],
+        'description': "**Owner Only** Updates the bot to the newest version, then restarts.",
+        'examples': [
+            {'command': "{prefix}update",
+             'effect': "Downloads the latest update and restarts the bot."}
+        ]
+    },
     'logoff': {
         'alias': 'logout'
     },

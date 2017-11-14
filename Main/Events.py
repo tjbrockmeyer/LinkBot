@@ -74,13 +74,6 @@ async def on_ready():
     link_bot.active = True
     logging.info('Bot is ready.')
 
-    # if an error occurred previously that caused the bot to restart, write a message about it.
-    if link_bot.encounteredError:
-        SendErrorMessage("An error occurred, causing a restart. "
-                           "Other errors may have followed, but this is the original: \n{0}".format(link_bot.error))
-        link_bot.encounteredError = False
-        link_bot.error = None
-
 
 # sets new members' role to the entry level role [Paul's server only]
 @link_bot.discordClient.event
@@ -94,7 +87,7 @@ async def on_member_join(member):
 # gets a message, splits it into (command, argstr), then starts the command on a new thread.
 @link_bot.discordClient.event
 async def on_message(message):
-    if not link_bot.isStopping and message.author.id != link_bot.discordClient.user.id:
+    if link_bot.isReadingCommands and message.author.id != link_bot.discordClient.user.id:
         logging.info("Received a message from " + message.author.name)
 
         cmd = Command(message)

@@ -1,6 +1,7 @@
 import logging
 from Main.Bot import link_bot
 from Main.Helper import SendMessage, SendErrorMessage, OnSyntaxError, IsOwner, IsAdmin
+from Commands.Command import Command
 
 
 def disabled_command(reason=""):

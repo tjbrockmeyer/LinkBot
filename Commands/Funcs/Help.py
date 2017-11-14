@@ -3,7 +3,7 @@ import discord
 
 
 # write a particular help panel to the chat.
-def cmd_help(cmd):
+def cmd_help(cmd: Command):
     logging.info('Command: help   Sending to {0}.'.format(cmd.author))
 
     # Prevents Circular dependency.

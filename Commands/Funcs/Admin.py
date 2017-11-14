@@ -2,7 +2,7 @@ from Commands.CmdHelper import *
 from Main.FileWriting import save_data
 
 # add/remove/list admins for the server in which the cmd was received
-def cmd_admin(cmd):
+def cmd_admin(cmd: Command):
     logging.info('Command: admin')
 
     # Check for args

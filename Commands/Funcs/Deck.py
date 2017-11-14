@@ -1,7 +1,7 @@
 from Commands.CmdHelper import *
 from random import Random
 
-def cmd_deck(cmd):
+def cmd_deck(cmd: Command):
     logging.info("Command: deck")
     if len(cmd.args) == 0:
         cmd.OnSyntaxError('')

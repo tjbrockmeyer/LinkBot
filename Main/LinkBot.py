@@ -2,6 +2,8 @@ import threading
 import logging
 import asyncio
 import time
+import os
+import sys
 from queue import Queue
 
 import discord
@@ -20,15 +22,8 @@ class ServerSideObject:
 
 class LinkBot:
     """
-
     :active: (bool = False) Setting this false along with isStopping will terminate the message sending thread.
-    :isStopping: (bool = False) Setting this to true will stop the retrieval of messages, and the program will wait for command threads to terminate.
-    :requestedStop: (bool = False) If the bot is not active, but the stop was not requested, the bot will restart.
-
     :paused: (bool = False)
-
-    :encounteredError: (bool = False)
-    :error: (Exception = None)
     :debug: (bool = False)
 
     :messages_to_send: (Queue[(channel/user/member, str, Embed)])
@@ -48,13 +43,10 @@ class LinkBot:
     """
     def __init__(self, google_api_key, riot_api_key):
         self.active = False
-        self.isStopping = False
-        self.requestedStop = False
+        self.isReadingCommands = True
+        self.restart = False
 
         self.paused = False
-
-        self.encounteredError = False
-        self.error = None
         self.debug = False
 
         self.messages_to_send = Queue()
@@ -106,7 +98,7 @@ class LinkBot:
 
         # while the bot is active, we can do and process other things here.
         # I was going to have a command line interface, but i haven't felt like getting it working.
-        while not self.isStopping:
+        while self.isReadingCommands:
             # dothingshere.....
             # ...
             # ...
@@ -119,6 +111,9 @@ class LinkBot:
         botThread.join()
         logging.info('Bot has been logged out. Closing gracefully.')
 
+        if self.restart:
+            os.execl(sys.executable, sys.executable, *sys.argv)
+
 
     # Thread that runs main bot processes.
     def _thread_Bot(self, discord_api_key):
@@ -126,15 +121,11 @@ class LinkBot:
         asyncio.set_event_loop(asyncio.new_event_loop())
 
         # Until a stop is requested, just keep restarting the bot if errors occur.
-        # I'm pretty sure that Client.run() has an internal try/except that keeps this from doing anything.
-        while not self.requestedStop:
-            try:
-                self.discordClient.run(discord_api_key)
-            except Exception as e:
-                logging.info("An Exception occurred. {0}".format(e))
-                if not self.encounteredError:
-                    self.encounteredError = True
-                    self.error = e
+        # The try/except here might be useless.
+        try:
+            self.discordClient.run(discord_api_key)
+        except Exception as e:
+            logging.error("Bot thread crash through Exception: {0}".format(e))
         logging.info("Bot thread closing.")
 
     # the thread that sends messages
@@ -142,7 +133,8 @@ class LinkBot:
         logging.info("Send Message thread started.")
 
         # This is a blocking call. Waits for messages to enter the message queue.
-        while not self.messages_to_send.empty() or not self.isStopping or self.active:
+        # While there are messages, or we are still reading, or the bot is still active...
+        while not self.messages_to_send.empty() or self.active or self.isReadingCommands:
             packet = self.messages_to_send.get()
             logging.info('Sending message ' +
                          ('with embed ' if packet[2] is not None else '') +
