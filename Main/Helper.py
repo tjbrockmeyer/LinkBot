@@ -27,7 +27,14 @@ def RunCommand(cmd):
 
 # adds a message that is to be sent to the message queue. The message is then sent by the send message thread.
 def SendMessage(destination, message='', embed=None):
-    link_bot.messages_to_send.put((destination, message, embed))
+    if len(message) > 2000:
+        split_index = message.rfind('\n', 0, 2000)
+        if split_index == -1:
+            split_index = 2000
+        SendMessage(destination, message[:split_index], embed)
+        SendMessage(destination, message[split_index:], embed)
+    else:
+        link_bot.messages_to_send.put((destination, message, embed))
 
 
 # sends a message the the owner containing details on some error. Does nothing if there is no owner.
