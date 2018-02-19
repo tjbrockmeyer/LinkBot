@@ -27,11 +27,11 @@ async def on_ready():
     # Print out various information about the bot for this session.
     # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-    # if link_bot.debug:
-    #     await link_bot.discordClient.change_presence(game=discord.Game(name="Getting worked on"))
-    #     logging.info('Currently running in DEBUG mode. Edit source with DEBUG = False to deactivate.')
-    # else:
-    #     await link_bot.discordClient.change_presence(game=discord.Game(name="{0}help".format(link_bot.prefix)))
+    if link_bot.debug:
+        await link_bot.discordClient.change_presence(game=discord.Game(name="Getting worked on"))
+        logging.info('Currently running in DEBUG mode. Edit source with DEBUG = False to deactivate.')
+    else:
+        await link_bot.discordClient.change_presence(game=discord.Game(name="{0}help".format(link_bot.prefix)))
 
     logging.info('Logged in as {0} with ID: {1}'
                  .format(link_bot.discordClient.user.name, link_bot.discordClient.user.id))
@@ -46,6 +46,12 @@ async def on_ready():
     logging.info('Active on these servers: ({0})'.format(len(link_bot.discordClient.servers)))
     for server in link_bot.discordClient.servers:
         logging.info('\t{0}'.format(server.name))
+
+    # Report errors that have occurred.
+    if link_bot.error is not None:
+        SendErrorMessage(link_bot.error)
+        SendErrorMessage(link_bot.error.with_traceback())
+        link_bot.error = None
 
     # CREATE SERVER-SIDE SESSION OBJECTS
     link_bot.BuildSessionObjects()
@@ -68,7 +74,7 @@ async def on_ready():
                     if bday.day == today.day and bday.month == today.month:
                         await link_bot.discordClient.send_message(
                             discord.utils.get(server.channels, is_default=True),
-                            "@everyone Today is {0}'s birthday! Happy Birthday {0}!".format(p))
+                            "@everyone Today is {0}'s birthday!".format(p))
 
 
     link_bot.active = True

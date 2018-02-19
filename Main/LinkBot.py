@@ -45,6 +45,7 @@ class LinkBot:
         self.active = False
         self.isReadingCommands = True
         self.restart = False
+        self.error = None
 
         self.paused = False
         self.debug = False
@@ -116,18 +117,23 @@ class LinkBot:
             os.execl(sys.executable, sys.executable, *sys.argv)
 
 
+
     # Thread that runs main bot processes.
     def _thread_Bot(self, discord_api_key):
         logging.info("Bot thread started.")
         asyncio.set_event_loop(asyncio.new_event_loop())
 
-        # Until a stop is requested, just keep restarting the bot if errors occur.
-        # The try/except here might be useless.
-        try:
-            self.discordClient.run(discord_api_key)
-        except Exception as e:
-            logging.error("Bot thread crash through Exception: {0}".format(e))
-        logging.info("Bot thread closing.")
+        # Start the bot up. If shutdown happens prematurely, restart again.
+        while True:
+            try:
+                self.discordClient.run(discord_api_key)
+                if self.active:
+                    self.error = Exception("Unexpected client restart.")
+                else:
+                    break
+            except Exception as e:
+                self.error = e
+
 
     # the thread that sends messages
     def _thread_SendMessage(self, loop):
