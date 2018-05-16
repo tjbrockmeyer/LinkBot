@@ -54,5 +54,5 @@ And you're done! Not so bad right?
   quote <#id>  |  quote list [author]  |  quote random [author]
     |  quote add <quote -author>  |  quote remove <#id>
   suggest <feature>
-  youtube <query>  |  yt <query>
+  youtube <query>  |  yt <query> 
 ```
