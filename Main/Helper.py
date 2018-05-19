@@ -95,30 +95,6 @@ def FormatAsColumn(content, column_length, alignment=-1):
     return " " * add_spaces + content
 
 
-def FormatAsLoLPlayerOutput(player):
-    """
-    Formats a player's in-game information into columns for outputting in monospace.
-
-    :param player: The player whose output should be formatted.
-    :type player: InGameSummoner
-    :return: A string with the formatting applied.
-    :rtype: str
-    """
-    string = FormatAsColumn(player.summoner.name, 17, alignment=1) \
-             + FormatAsColumn(player.rank, 15, alignment=0) \
-             + FormatAsColumn(str(player.lp), 6, alignment=-1) \
-             + FormatAsColumn(player.series, 6, alignment=0) \
-             + FormatAsColumn(player.champion.idealized, 15, alignment=0) \
-             + FormatAsColumn(str(player.games_champ), 6, alignment=-1) \
-             + FormatAsColumn(str(player.win_rate_champ) + '%', 5, alignment=1) \
-             + FormatAsColumn(str(player.kda_champ), 6, alignment=-1) \
-             + FormatAsColumn(str(player.games), 6, alignment=-1) \
-             + FormatAsColumn(str(player.win_rate) + '%', 8, alignment=1) \
-             + FormatAsColumn(str(player.kda), 5, alignment=-1) \
-             + '\n'
-    return string
-
-
 def IsAdmin(member):
     """
     Checks if the member is an admin.

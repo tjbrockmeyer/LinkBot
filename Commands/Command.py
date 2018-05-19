@@ -20,7 +20,7 @@ class Command:
     :info: (CommandInfo) A dictionary of info for this command. None if the command doesn't exist.
     :isValid: (bool) A bool stating whether this is a valid command or not.
 
-    :loop: (asyncio.EventLoop?) The asyncio event loop to be used for threadsafe coroutimes.
+    :loop: The asyncio event loop to be used for threadsafe coroutines.
     """
 
     def __init__(self, message: discord.Message):

@@ -86,27 +86,32 @@ class LinkBot:
             name='DiscordBot', target=self._thread_Bot, args=(discord_api_key,))
         botThread.start()
 
-        # Create the thread that sends messages to channels and users.
-        messageSender = threading.Thread(
-            name='MSG_Send', target=self._thread_SendMessage, args=(asyncio.get_event_loop(),))
-        messageSender.setDaemon(True)
-        messageSender.start()
-
         # wait for the bot to become active. Bot becomes active through the BotThread, in the event on_ready.
+        wait_count = 0
         while not self.active:
+            # If we wait 10 seconds with no startup, restart the program.
+            wait_count += 1
+            if wait_count > 10:
+                os.execl(sys.executable, sys.executable, *sys.argv)
+
             logging.info('Waiting for bot to start.')
             time.sleep(1)
 
-        # while the bot is active, we can do and process other things here.
-        # I was going to have a command line interface, but i haven't felt like getting it working.
-        while self.isReadingCommands:
-            # dothingshere.....
-            # ...
-            # ...
-            time.sleep(1)
+        if self.isReadingCommands:
+            # Create the thread that sends messages to channels and users.
+            messageSender = threading.Thread(
+                name='MSG_Send', target=self._thread_SendMessage, args=(asyncio.get_event_loop(),))
+            messageSender.setDaemon(True)
+            messageSender.start()
 
-        logging.info('Waiting on message sender thread.')
-        messageSender.join()
+        while self.isReadingCommands:
+            # Continuously monitor the bot's thread. Restart the program if it fails.
+            if not botThread.is_alive():
+                os.execl(sys.executable, sys.executable, *sys.argv)
+            time.sleep(5)
+
+        # Wait for any pending operations...
+        time.sleep(1)
         logging.info('Logging bot out.')
         asyncio.run_coroutine_threadsafe(self.discordClient.logout(), asyncio.get_event_loop())
         botThread.join()
@@ -122,17 +127,7 @@ class LinkBot:
     def _thread_Bot(self, discord_api_key):
         logging.info("Bot thread started.")
         asyncio.set_event_loop(asyncio.new_event_loop())
-
-        # Start the bot up. If shutdown happens prematurely, restart again.
-        while True:
-            try:
-                self.discordClient.run(discord_api_key)
-                if self.active:
-                    self.error = Exception("Unexpected client restart.")
-                else:
-                    break
-            except Exception as e:
-                self.error = e
+        self.discordClient.run(discord_api_key)
 
 
     # the thread that sends messages
@@ -145,7 +140,7 @@ class LinkBot:
             packet = self.messages_to_send.get()
             logging.info('Sending message ' +
                          ('with embed ' if packet[2] is not None else '') +
-                         'to {0}: {1}'.format(packet[0], packet[1]))
+                         'to {}: {}'.format(packet[0], packet[1]))
 
             # Check if the message has an embed. If so, apply it.
             if packet[2] is None:
