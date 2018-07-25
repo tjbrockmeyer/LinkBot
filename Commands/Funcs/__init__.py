@@ -5,7 +5,6 @@ from Commands.Funcs.Image import cmd_image
 from Commands.Funcs.Logout import cmd_logout
 from Commands.Funcs.Lolgame import cmd_lolgame
 from Commands.Funcs.Migrate import cmd_migrate
-from Commands.Funcs.Nsfw import cmd_nsfw
 from Commands.Funcs.Pause import cmd_pause
 from Commands.Funcs.Play import cmd_play
 from Commands.Funcs.Quote import cmd_quote

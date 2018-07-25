@@ -13,7 +13,7 @@ def cmd_help(cmd: Command):
        "Argument syntax:  `<mandatory> [optional]`\n" \
        "Command prefix: '{prefix}'\n" \
        "Use `{help_syntax}` to get more info on a particular command, for example: 'help quote'" \
-        .format(prefix=link_bot.prefix, help_syntax=cmd.info.GetSyntaxWithFormat())
+        .format(prefix=bot.prefix, help_syntax=cmd.info.get_syntax_with_format())
 
     here = len(cmd.args) > 0 and cmd.args[0].lower() == "here"
 
@@ -29,16 +29,16 @@ def cmd_help(cmd: Command):
     if command is not None:
 
         # Check for bad command.
-        if not CommandInfo.IsCommand(command):
-            cmd.OnSyntaxError(command + ' is not a valid command.')
+        if not CommandInfo.is_command(command):
+            cmd.on_syntax_error(command + ' is not a valid command.')
             return
 
-        cmdInfo = CommandInfo.GetCommandInfo(command)
+        cmdInfo = CommandInfo.get_command_info(command)
         embed = discord.Embed(title="**__" + cmdInfo.command + "__**",
                               color=discord.Color(0x127430),
                               description=cmdInfo.description)
-        cmdInfo.EmbedExamples(embed, cmd_as_code=False)
-        SendMessage(cmd.author if not here else cmd.channel, embed=embed)
+        cmdInfo.embed_examples(embed, cmd_as_code=False)
+        bot.send_message(cmd.author if not here else cmd.channel, embed=embed)
 
         logging.info('Help sent.')
 
@@ -47,9 +47,9 @@ def cmd_help(cmd: Command):
         embed = discord.Embed(title="__General Command Help__",
                               color=discord.Color(0x127430),
                               description=help_header)
-        for x in CommandInfo.EnumerateCommands_abc():
-            x.EmbedSyntax(embed, mk_down='`', title_mk_down='__', sep='\n', inline=True)
-        SendMessage(cmd.author if not here else cmd.channel, embed=embed)
+        for x in CommandInfo.enumerate_commands_abc():
+            x.embed_syntax(embed, mk_down='`', title_mk_down='__', sep='\n', inline=True)
+        bot.send_message(cmd.author if not here else cmd.channel, embed=embed)
 
         logging.info("Help sent.")
 

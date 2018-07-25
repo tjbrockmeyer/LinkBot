@@ -1,7 +1,7 @@
 from functools import reduce
 
 from Commands.Data import COMMANDS
-from Main.Bot import link_bot
+from Main.LinkBot import bot
 
 
 class CmdExample:
@@ -33,7 +33,7 @@ class CommandInfo:
         self.description = cmd_dict['description']
         self.examples = [CmdExample(ex) for ex in cmd_dict['examples']]
 
-    def GetSyntaxWithFormat(self, mk_down='`', sep=' || '):
+    def get_syntax_with_format(self, mk_down='`', sep=' || '):
         """
         Formats the syntax of this command using the args.
 
@@ -45,7 +45,7 @@ class CommandInfo:
         fn = lambda x, y: x + "{sep}{mk}{syn}{mk}".format(sep=sep, mk=mk_down, syn=y)
         return reduce(fn, self.syntax, '')[len(sep):]
 
-    def GetExamplesWithFormat(self, cmd_as_code=True, cmd_ex_sep='\n\t', sep='\n'):
+    def get_examples_with_format(self, cmd_as_code=True, cmd_ex_sep='\n\t', sep='\n'):
         """
         Formats the examples for this command using the args provided.
 
@@ -60,9 +60,9 @@ class CommandInfo:
         """
         fn = lambda x, y: x + "{sep}{tick}{ex}{tick}{ex_sep}{effect}"\
             .format(sep=sep, tick='`' if cmd_as_code else '', ex=y.cmd, ex_sep=cmd_ex_sep, effect=y.effect)
-        return reduce(fn, self.examples, '')[len(sep):].format(prefix=link_bot.prefix)
+        return reduce(fn, self.examples, '')[len(sep):].format(prefix=bot.prefix)
 
-    def EmbedSyntax(self, embed, mk_down='`', title_mk_down='', sep=' || ', inline=False):
+    def embed_syntax(self, embed, mk_down='`', title_mk_down='', sep=' || ', inline=False):
         """
         Embeds the syntax of this command into the passed embed as a new field.
 
@@ -74,9 +74,9 @@ class CommandInfo:
         """
         embed.add_field(
             name="{mk}{cmd}{mk}".format(cmd=self.command, mk=title_mk_down),
-            value=self.GetSyntaxWithFormat(mk_down, sep), inline=inline)
+            value=self.get_syntax_with_format(mk_down, sep), inline=inline)
 
-    def EmbedExamples(self, embed, cmd_as_code=True):
+    def embed_examples(self, embed, cmd_as_code=True):
         """
         Embeds the examples for this command into the passed embed as new fields.
 
@@ -85,11 +85,11 @@ class CommandInfo:
         """
         for ex in self.examples:
             embed.add_field(name="{tick}{cmd}{tick}"
-                            .format(cmd=ex.cmd.format(prefix=link_bot.prefix),
+                            .format(cmd=ex.cmd.format(prefix=bot.prefix),
                                     tick='`' if cmd_as_code else ''), value=ex.effect, inline=True)
 
     @staticmethod
-    def IsCommand(cmdstr):
+    def is_command(cmdstr):
         """
         Returns true if the passed command string is a valid command.
 
@@ -102,7 +102,7 @@ class CommandInfo:
 
 
     @staticmethod
-    def GetCommandInfo(cmdstr):
+    def get_command_info(cmdstr):
         """
         Gets the CommandInfo within the COMMANDS dict that belongs to this command. Follows aliases.
 
@@ -113,13 +113,13 @@ class CommandInfo:
         """
         if cmdstr in COMMANDS:
             if 'alias' in COMMANDS[cmdstr]:
-                return CommandInfo.GetCommandInfo(COMMANDS[cmdstr]['alias'])
+                return CommandInfo.get_command_info(COMMANDS[cmdstr]['alias'])
             return CommandInfo(cmdstr)
         return None
 
 
     @staticmethod
-    def EnumerateCommands_abc():
+    def enumerate_commands_abc():
         """
         Enumerates the list of commands in alphabetical order.
 

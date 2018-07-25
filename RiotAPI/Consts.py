@@ -37,8 +37,8 @@ API_URL = {
 }
 
 REQUEST_LIMITS = {
-    'normal_10s': 10,
-    'normal_10m': 500,
+    'normal_10s': 60,
+    'normal_10m': 300,
     'production_10s': 3000,
     'production_10m': 180000
 }

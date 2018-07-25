@@ -3,13 +3,13 @@ from Commands.CmdHelper import *
 # play something in voice chat
 @disabled_command("Not currently implemented")
 def cmd_play(cmd: Command):
-    if cmd.server is None:
-        SendMessage(cmd.channel, "This command may only be used in a server.")
+    if cmd.guild is None:
+        bot.send_message(cmd.channel, "This command may only be used in a server.")
         return
 
     voice = cmd.author.voice
     if voice.voice_channel is None:
-        SendMessage(cmd.channel, "You need to be in a voice channel.")
+        bot.send_message(cmd.channel, "You need to be in a voice channel.")
         return
 
     inSameServer = False
@@ -17,7 +17,7 @@ def cmd_play(cmd: Command):
     inSameChannel = False
 
     # find out if we're in the same server/channel as our inviter.
-    for voiceClient in link_bot.discordClient.voice_clients:
+    for voiceClient in bot.discordClient.voice_clients:
         if voiceClient.server == voice.voice_channel.server:
             inSameServer = True
             vc = voiceClient
@@ -29,6 +29,6 @@ def cmd_play(cmd: Command):
         if inSameServer:
             vc.move_to(voice.voice_channel)
         else:
-            link_bot.discordClient.join_voice_channel(voice.voice_channel)
+            bot.discordClient.join_voice_channel(voice.voice_channel)
 
-    SendMessage(cmd.channel, "Joined.")
+    bot.send_message(cmd.channel, "Joined.")

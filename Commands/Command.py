@@ -1,5 +1,4 @@
-from Main.Bot import link_bot
-from Main.Helper import SendMessage, OnSyntaxError
+from Main.LinkBot import bot
 import discord
 
 
@@ -34,20 +33,21 @@ class Command:
 
         # Get channel and server
         self.channel = message.channel
-        if self.channel.is_private:
-            self.server = None
+        if isinstance(self.channel, discord.TextChannel):
+            self.guild = message.channel.guild
         else:
-            self.server = message.channel.server
+            self.guild = None
 
         # Get message and author
         self.author = message.author
         self.message = message
+        self.is_dm = isinstance(self.channel, discord.DMChannel)
 
         # Get arg string and prefix
         self.argstr = message.content
-        self.hasPrefix = message.content.startswith(link_bot.prefix)
-        if self.hasPrefix:
-            self.argstr = self.argstr[len(link_bot.prefix):].lstrip()
+        self.has_prefix = message.content.startswith(bot.prefix)
+        if self.has_prefix:
+            self.argstr = self.argstr[len(bot.prefix):].lstrip()
 
         # Get command.
         try:
@@ -65,9 +65,9 @@ class Command:
                 self.args.append(x)
 
         # Get info
-        self.info = CommandInfo.GetCommandInfo(self.command.lower())
-        self.isValid = self.info is not None
+        self.info = CommandInfo.get_command_info(self.command.lower())
+        self.is_valid = self.info is not None
 
 
-    def OnSyntaxError(self, info):
-        SendMessage(self.channel, OnSyntaxError(self.command, info))
+    def on_syntax_error(self, info):
+        bot.send_message(self.channel, bot.on_syntax_error(self.command, info))

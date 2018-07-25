@@ -1,6 +1,5 @@
 import logging
-from Main.Bot import link_bot
-from Main.Helper import SendMessage, SendErrorMessage, OnSyntaxError, IsOwner, IsAdmin
+from Main.LinkBot import bot, LinkBotError
 from Commands.Command import Command
 
 
@@ -9,8 +8,8 @@ def disabled_command(reason=""):
     def decorator(func):
         def wrapper(cmd):
             if reason != "":
-                SendMessage(cmd.channel, "This command is currently disabled. Reason: " + reason)
+                bot.send_message(cmd.channel, "This command is currently disabled. Reason: " + reason)
             else:
-                SendMessage(cmd.channel, "This command is currently disabled.")
+                bot.send_message(cmd.channel, "This command is currently disabled.")
         return wrapper
     return decorator

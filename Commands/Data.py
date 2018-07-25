@@ -147,15 +147,6 @@ COMMANDS = {
              'effect': "Leaves a suggestion for flying puppies - politely..."}
         ]
     },
-    'nsfw': {
-        'func': cmd_nsfw,
-        'syntax': ["nsfw <on|off>"],
-        'description': "View the state of the NSFW filter, turn it on/off.",
-        'examples': [
-            {'command': "{prefix}nsfw on",
-             'effect': "Turns on the NSFW filter for this server."}
-        ]
-    },
     'unpause': {
         'alias': 'pause'
     },

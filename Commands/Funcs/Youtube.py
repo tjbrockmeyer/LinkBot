@@ -1,4 +1,5 @@
 from Commands.CmdHelper import *
+from GoogleAPI import GoogleAPIError
 
 # link the first youtube video found using the provided query
 def cmd_youtube(cmd: Command):
@@ -6,23 +7,21 @@ def cmd_youtube(cmd: Command):
 
     # check for missing args
     if len(cmd.args) == 0:
-        cmd.OnSyntaxError('You must provide a query to search for.')
+        cmd.on_syntax_error('You must provide a query to search for.')
         return
 
     # get the search results
-    api_request = link_bot.googleClient.search_for_video(cmd.argstr, 1)
-
-    # check for bad status code
-    if api_request.status_code != 200:
-        SendErrorMessage("Google API Error: \n" + api_request.url)
-        SendMessage(cmd.channel, "An unknown error occurred. The quota limit may have been reached.")
+    try:
+        video_list = bot.googleClient.get_video_search_results(cmd.argstr, 1)
+    except GoogleAPIError as e:
+        bot.bot.send_error_message("Google API Error: " + e.json)
+        bot.send_message(cmd.channel, "An error occurred. The quota limit may have been reached.")
         return
 
     # send link to first search result
-    logging.info(api_request.url)
-    if len(api_request.json['items']) == 0:
-        SendMessage(cmd.channel, "No results were found.")
+    if len(video_list) == 0:
+        bot.send_message(cmd.channel, "No results were found.")
     else:
-        SendMessage(cmd.channel, "https://youtube.com/watch?v=" + api_request.json['items'][0]['id']['videoId'])
+        bot.send_message(cmd.channel, video_list[0].url)
         logging.info("Sent YouTube video link.")
 

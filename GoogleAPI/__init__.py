@@ -1,1 +1,1 @@
-from GoogleAPI.Client import Client
+from GoogleAPI.Client import Client, GoogleAPIError

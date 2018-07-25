@@ -4,12 +4,12 @@ import threading
 # log the bot out
 def cmd_logout(cmd: Command):
     logging.info("Command: logout")
-    if not IsOwner(cmd.author):
-        SendMessage(cmd.channel, "You must be the bot's owner to use this command.")
+    if not bot.is_owner(cmd.author):
+        bot.send_message(cmd.channel, "You must be the bot's owner to use this command.")
         return
 
     # disable cmd reading
-    link_bot.isReadingCommands = False
+    bot.isReadingCommands = False
 
     logging.info('Waiting for command threads to finish.')
     for thread in threading.enumerate():
@@ -19,5 +19,5 @@ def cmd_logout(cmd: Command):
             thread.join()
     logging.info("All threads closed. Logging out.")
 
-    SendMessage(cmd.channel, "Logging out.")
-    link_bot.active = False
+    bot.send_message(cmd.channel, "Logging out.")
+    bot.active = False
