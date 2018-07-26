@@ -16,8 +16,7 @@ DM_ONLY = 16
 
 def restrict(conditions, reason=''):
     def decorator(func):
-        @wraps(func)
-        async def wrapper(cmd, *args, **kwargs):
+        def passes_conditions(cmd):
             if DISABLE & conditions != 0:
                 bot.send_message(cmd.channel, "`{}` is disabled. {}"
                                  .format(_usrepl(func.__name__), "Reason: {}.".format(reason) if reason != '' else ''))
@@ -34,39 +33,77 @@ def restrict(conditions, reason=''):
                 bot.send_message(cmd.channel, "`{}` can only be used in a direct message."
                                  .format(_usrepl(func.__name__)))
             else:
-                await func(cmd, *args, **kwargs)
-        return wrapper
+                return True
+            return False
+
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def wrapper(cmd, *args, **kwargs):
+                if passes_conditions(cmd):
+                    await func(cmd, *args, **kwargs)
+            return wrapper
+        else:
+            @wraps(func)
+            def wrapper(cmd, *args, **kwargs):
+                if passes_conditions(cmd):
+                    func(cmd, *args, **kwargs)
+            return wrapper
+
     return decorator
 
 
 def require_args(count):
     def decorator(func):
-        @wraps(func)
-        async def wrapper(cmd, *args, **kwargs):
+        def args_good(cmd):
             if len(cmd.args) < count:
                 cmd.on_syntax_error(
                     "At least {} {} necessary.".format(count, 'arg is' if count == 1 else 'args are'),
                     cmd_name=_usrepl(func.__name__))
-            else:
-                await func(cmd, *args, **kwargs)
-        return wrapper
+                return False
+            return True
+
+        if asyncio.iscoroutinefunction(func):
+            @wraps(func)
+            async def wrapper(cmd, *args, **kwargs):
+                if args_good(cmd):
+                    await func(cmd, *args, **kwargs)
+            return wrapper
+        else:
+            @wraps(func)
+            def wrapper(cmd, *args, **kwargs):
+                if args_good(cmd):
+                    func(cmd, *args, **kwargs)
+            return wrapper
     return decorator
 
 
 def updates_database(func):
-    @wraps(func)
-    async def wrapper(cmd, *args, **kwargs):
-        await func(cmd, *args, **kwargs)
-        bot.save_data()
+    if asyncio.iscoroutinefunction(func):
+        @wraps(func)
+        async def wrapper(cmd, *args, **kwargs):
+            await func(cmd, *args, **kwargs)
+            bot.save_data()
+    else:
+        @wraps(func)
+        def wrapper(cmd, *args, **kwargs):
+            func(cmd, *args, **kwargs)
+            bot.save_data()
     return wrapper
 
 
 def command(func):
-    @wraps(func)
-    async def wrapper(cmd, *args, **kwargs):
-        logging.info("Running command: {}".format(func.__name__))
-        await func(cmd, *args, **kwargs)
-        logging.info("Command complete: {}".format(func.__name__))
+    if asyncio.iscoroutinefunction(func):
+        @wraps(func)
+        async def wrapper(cmd, *args, **kwargs):
+            logging.info("Running command: {}".format(func.__name__))
+            await func(cmd, *args, **kwargs)
+            logging.info("Command complete: {}".format(func.__name__))
+    else:
+        @wraps(func)
+        def wrapper(cmd, *args, **kwargs):
+            logging.info("Running command: {}".format(func.__name__))
+            func(cmd, *args, **kwargs)
+            logging.info("Command complete: {}".format(func.__name__))
     return wrapper
 
 

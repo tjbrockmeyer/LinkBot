@@ -21,13 +21,12 @@ async def on_ready():
     # Print out various information about the bot for this session.
     # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-    logging.info('Logged in as {0} with ID: {1}'
+    logging.info('Logged in as {} with ID: {}'
                  .format(bot.client.user.name, bot.client.user.id))
-    logging.info('Active on these servers: ({0})'.format(len(bot.client.guilds)))
+    logging.info('Active on these servers: ({})'.format(len(bot.client.guilds)))
     for server in bot.client.guilds:
-        logging.info('\t{0}'.format(server.name))
+        logging.info('\t{}'.format(server.name))
 
-    logging.info("Owner: {}:{}".format(type(bot.owner), bot.owner))
     bot.owner = bot.client.get_user(bot.owner_id)
     if bot.owner is None:
         raise LinkBotError("Bot owner could not be found in any servers that the bot is a part of.")

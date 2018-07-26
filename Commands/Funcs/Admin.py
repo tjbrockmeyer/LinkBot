@@ -5,7 +5,7 @@ from functools import reduce
 @restrict(SERVER_ONLY)
 @require_args(1)
 @command
-async def admin(cmd: Command):
+def admin(cmd: Command):
     if cmd.guild.id not in bot.data:
         bot.data[cmd.guild.id] = {}
     if 'admins' not in bot.data[cmd.guild.id]:
@@ -30,8 +30,11 @@ def admin_list(cmd):
         return
 
     # get the admin names from their IDs, save them to a string, then send it to the channel.
-    admins = reduce(lambda x, y: "{}, {}".format(x, y) if y in bot.data[cmd.guild.id]['admins'] else x,
-                    cmd.guild.members, "Admins: ")
+    l = bot.data[cmd.guild.id]['admins']
+    if len(l) == 1:
+        admins = "Admin: " + str(bot.client.get_user(l[0]))
+    else:
+        admins = "Admins: " + reduce(lambda x, y: "{}, {}".format(x, bot.client.get_user(y)), l[1:], str(bot.client.get_user(l[0])))
     bot.send_message(cmd.channel, admins)
 
 

@@ -18,15 +18,15 @@ async def quote(cmd: Command):
     subcmd = cmd.args[0]
     cmd.shiftargs()
     if subcmd.isdigit():
-        quote_id(cmd)
+        await quote_id(cmd)
     elif subcmd.lower() == "random":
-        quote_random(cmd)
+        await quote_random(cmd)
     elif subcmd.lower() == "list":
-        quote_list(cmd)
+        await quote_list(cmd)
     elif subcmd.lower() == "add":
-        quote_add(cmd)
+        await quote_add(cmd)
     elif subcmd.lower() == "remove":
-        quote_remove(cmd)
+        await quote_remove(cmd)
     else:
         cmd.on_syntax_error('Invalid sub-command.')
 
@@ -125,7 +125,7 @@ def quote_add(cmd):
 
 
 @restrict(ADMIN_ONLY)
-@require_args(2)
+@require_args(1)
 @updates_database
 def quote_remove(cmd):
     # ID type-check

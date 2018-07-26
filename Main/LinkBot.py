@@ -49,6 +49,10 @@ class LinkBot:
         #       "birthdays" : { name : birthday, ...},
         #       "quotes" : [ ( text, author ), ... ]
         # }
+        records = [(key, val) for (key, val) in self.data.items()]
+        for (key, val) in records:
+            self.data[int(key)] = val
+            del self.data[key]
 
         # Read from the config file
         if not os.path.isfile(CONFIG_FILE):  # if the config file doesn't exist, create it with the defaults.
@@ -115,7 +119,7 @@ class LinkBot:
         :return: A new string with the parameters formatted in.
         :rtype: str
         """
-        return "{info} Try `{prefix}help {cmd}` for help on how to use `{cmd_name}." \
+        return "{info} Try `{prefix}help {cmd}` for help on how to use `{cmd_name}`." \
             .format(prefix=self.prefix, cmd=command, info=info, cmd_name=(command if cmd_name is None else cmd_name)) \
             .lstrip()
 
@@ -154,7 +158,7 @@ class LinkBot:
 
     def save_data(self):
         with self.lock:
-            save_json(DATABASE_FILE, self.data)
+            save_json(DATABASE_FILE, self.data, pretty=True)
         logging.info("Database saved.")
 
     # create a default config file with documentation.
@@ -218,7 +222,10 @@ class LinkBot:
     def _safe_command_func(b, cmd):
         try:
             asyncio.set_event_loop(cmd.loop)
-            asyncio.run_coroutine_threadsafe(cmd.info.func(cmd), cmd.loop)
+            if asyncio.iscoroutinefunction(cmd.info.func):
+                asyncio.run_coroutine_threadsafe(cmd.info.func(cmd), cmd.loop)
+            else:
+                cmd.info.func(cmd)
         except:
             from functools import reduce
             exc_type, exc_value, exc_traceback = sys.exc_info()
