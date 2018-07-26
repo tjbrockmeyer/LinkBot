@@ -6,7 +6,7 @@ from RiotAPI import *
 @restrict(0)
 @require_args(1)
 @command
-def lolgame(cmd: Command):
+async def lolgame(cmd: Command):
     args = cmd.argstr.split(',')
 
     # get args
@@ -46,68 +46,68 @@ def lolgame(cmd: Command):
 
     # begin organizing data
     bot.send_message(cmd.channel, "Looking up {}'s game on the {} server...".format(summoner.name, bot.riotClient.region.upper()))
-    # TODO: Send typing...
+    await asyncio.sleep(0.5)
 
-    # get full list of champions in league of legends
-    try:
-        champions = bot.riotClient.get_champion_static_all()
-    except RiotAPIError as e:
-        _notify_of_unknown_error(cmd.channel, e)
-        return
+    async with cmd.channel.typing():
+        # get full list of champions in league of legends
+        try:
+            champions = bot.riotClient.get_champion_static_all()
+        except RiotAPIError as e:
+            _notify_of_unknown_error(cmd.channel, e)
+            return
 
-    # list for both teams and the output string.
-    blueteam = []
-    redteam = []
+        # list for both teams and the output string.
+        blueteam = []
+        redteam = []
 
-    for player in game.participants:
-        p = PlayerOutput(player.name, champions[player.champion_id])
+        for player in game.participants:
+            p = PlayerOutput(player.name, champions[player.champion_id])
 
-        if player.team_id == 100:
-            redteam.append(p)
-        else:
-            blueteam.append(p)
+            if player.team_id == 100:
+                redteam.append(p)
+            else:
+                blueteam.append(p)
 
-        if game.ranked_queue is not None:
-            try:
-                for entry in bot.riotClient.get_league_entries(player.summoner_id):
-                    if entry.queue_type == game.ranked_queue:
-                        p.rank = entry.tier + ' ' + entry.rank
-                        p.streak = entry.hot_streak
-                        if entry.series is not None:
-                            p.series = entry.series.progress.replace('N', '-')
-                        p.lp = entry.points
-                        p.games = entry.wins + entry.losses
-                        p.winrate = "{:0.2f}".format(entry.wins / float(p.games) if p.games != 0 else entry.wins)
-            except RiotAPIError as e:
-                _notify_of_unknown_error(cmd.channel, e)
+            if game.ranked_queue is not None:
+                try:
+                    for entry in bot.riotClient.get_league_entries(player.summoner_id):
+                        if entry.queue_type == game.ranked_queue:
+                            p.rank = entry.tier + ' ' + entry.rank
+                            p.streak = entry.hot_streak
+                            if entry.series is not None:
+                                p.series = entry.series.progress.replace('N', '-')
+                            p.lp = entry.points
+                            p.games = entry.wins + entry.losses
+                            p.winrate = "{:0.2f}".format(entry.wins / float(p.games) if p.games != 0 else entry.wins)
+                except RiotAPIError as e:
+                    _notify_of_unknown_error(cmd.channel, e)
 
-    # begin formatting output
-    gamestring = '```League of Legends Game for {}:\n'.format(summoner.name) + \
-            game.full_game_type + \
-            '\n\nBLUE TEAM (Bottom Left):\n' + \
-                 format_as_column('Summoner Name', 17, alignment=1) + \
-                 format_as_column('Rank', 16, alignment=0) + \
-                 format_as_column('LP', 6, alignment=-1) + \
-                 format_as_column('Series', 6, alignment=-1) + \
-                 format_as_column('Champion', 15, alignment=0) + \
-                 format_as_column('Games', 6, alignment=0) + \
-                 format_as_column('Win%', 8, alignment=0) + '\n'
-    for p in blueteam:
-        gamestring += _format_as_lolplayer_output(p)
-    gamestring += '\nRED TEAM (Top Right):\n' + \
-                  format_as_column('Summoner Name', 17, alignment=1) + \
-                  format_as_column('Rank', 16, alignment=0) + \
-                  format_as_column('LP', 6, alignment=-1) + \
-                  format_as_column('Series', 6, alignment=-1) + \
-                  format_as_column('Champion', 15, alignment=0) + \
-                  format_as_column('Games', 6, alignment=0) + \
-                  format_as_column('Win%', 8, alignment=0) + '\n'
-    for p in redteam:
-        gamestring += _format_as_lolplayer_output(p)
-    gamestring += '```'
+        # begin formatting output
+        gamestring = '```League of Legends Game for {}:\n'.format(summoner.name) + \
+                game.full_game_type + \
+                '\n\nBLUE TEAM (Bottom Left):\n' + \
+                     format_as_column('Summoner Name', 17, alignment=1) + \
+                     format_as_column('Rank', 16, alignment=0) + \
+                     format_as_column('LP', 6, alignment=-1) + \
+                     format_as_column('Series', 6, alignment=-1) + \
+                     format_as_column('Champion', 15, alignment=0) + \
+                     format_as_column('Games', 6, alignment=0) + \
+                     format_as_column('Win%', 8, alignment=0) + '\n'
+        for p in blueteam:
+            gamestring += _format_as_lolplayer_output(p)
+        gamestring += '\nRED TEAM (Top Right):\n' + \
+                      format_as_column('Summoner Name', 17, alignment=1) + \
+                      format_as_column('Rank', 16, alignment=0) + \
+                      format_as_column('LP', 6, alignment=-1) + \
+                      format_as_column('Series', 6, alignment=-1) + \
+                      format_as_column('Champion', 15, alignment=0) + \
+                      format_as_column('Games', 6, alignment=0) + \
+                      format_as_column('Win%', 8, alignment=0) + '\n'
+        for p in redteam:
+            gamestring += _format_as_lolplayer_output(p)
+        gamestring += '```'
 
-    bot.send_message(cmd.channel, gamestring)
-    logging.info("Sent League of Legends game info.")
+        bot.send_message(cmd.channel, gamestring)
 
 
 class PlayerOutput:

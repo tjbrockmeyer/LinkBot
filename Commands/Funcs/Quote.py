@@ -8,7 +8,7 @@ from Commands.CmdHelper import *
 @restrict(SERVER_ONLY)
 @require_args(1)
 @command
-def quote(cmd: Command):
+async def quote(cmd: Command):
     # if there have not been any registered quotes yet, create the list.
     if not cmd.guild.id in bot.data:
         bot.data[cmd.guild.id] = {}

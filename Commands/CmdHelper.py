@@ -1,5 +1,7 @@
 
 import logging
+import asyncio
+import discord
 from Main.LinkBot import bot, LinkBotError
 from Commands.Command import Command
 from functools import wraps
@@ -15,7 +17,7 @@ DM_ONLY = 16
 def restrict(conditions, reason=''):
     def decorator(func):
         @wraps(func)
-        def wrapper(cmd, *args, **kwargs):
+        async def wrapper(cmd, *args, **kwargs):
             if DISABLE & conditions != 0:
                 bot.send_message(cmd.channel, "`{}` is disabled. {}"
                                  .format(_usrepl(func.__name__), "Reason: {}.".format(reason) if reason != '' else ''))
@@ -32,7 +34,7 @@ def restrict(conditions, reason=''):
                 bot.send_message(cmd.channel, "`{}` can only be used in a direct message."
                                  .format(_usrepl(func.__name__)))
             else:
-                func(cmd, *args, **kwargs)
+                await func(cmd, *args, **kwargs)
         return wrapper
     return decorator
 
@@ -40,30 +42,30 @@ def restrict(conditions, reason=''):
 def require_args(count):
     def decorator(func):
         @wraps(func)
-        def wrapper(cmd, *args, **kwargs):
+        async def wrapper(cmd, *args, **kwargs):
             if len(cmd.args) < count:
                 cmd.on_syntax_error(
                     "At least {} {} necessary.".format(count, 'arg is' if count == 1 else 'args are'),
                     cmd_name=_usrepl(func.__name__))
             else:
-                func(cmd, *args, **kwargs)
+                await func(cmd, *args, **kwargs)
         return wrapper
     return decorator
 
 
 def updates_database(func):
     @wraps(func)
-    def wrapper(cmd, *args, **kwargs):
-        func(cmd, *args, **kwargs)
+    async def wrapper(cmd, *args, **kwargs):
+        await func(cmd, *args, **kwargs)
         bot.save_data()
     return wrapper
 
 
 def command(func):
     @wraps(func)
-    def wrapper(cmd, *args, **kwargs):
+    async def wrapper(cmd, *args, **kwargs):
         logging.info("Running command: {}".format(func.__name__))
-        func(cmd, *args, **kwargs)
+        await func(cmd, *args, **kwargs)
         logging.info("Command complete: {}".format(func.__name__))
     return wrapper
 

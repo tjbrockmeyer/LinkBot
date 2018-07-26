@@ -7,7 +7,7 @@ import git
 
 @restrict(OWNER_ONLY)
 @command
-def update(cmd: Command):
+async def update(cmd: Command):
     for thread in threading.enumerate():
         if thread is not threading.current_thread() and (thread.name == 'cmd_update' or thread.name == 'cmd_upgrade'):
             bot.send_message(cmd.channel, "Update is already in progress.")

@@ -1,5 +1,6 @@
 from Main.LinkBot import bot
 import discord
+import asyncio
 
 
 class Command:
@@ -19,7 +20,7 @@ class Command:
     :info: (CommandInfo) A dictionary of info for this command. None if the command doesn't exist.
     :isValid: (bool) A bool stating whether this is a valid command or not.
 
-    :loop: The asyncio event loop to be used for threadsafe coroutines.
+    :loop (AbstractEventLoop): The asyncio event loop to be used for threadsafe coroutines.
     """
 
     def __init__(self, message: discord.Message):
@@ -67,6 +68,7 @@ class Command:
         # Get info
         self.info = CommandInfo.get_command_info(self.command.lower())
         self.is_valid = self.info is not None
+        self.loop = asyncio.get_event_loop()
 
 
     def on_syntax_error(self, info='', cmd_name=None):

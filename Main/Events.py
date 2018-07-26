@@ -9,7 +9,7 @@ ENTRY_LEVEL_ROLE_ID = 215608168519172096
 
 
 # some initialization and setting members with no role to the entry level role [Paul's server only]
-@bot.discordClient.event
+@bot.client.event
 async def on_ready():
 
     # load voice module
@@ -22,13 +22,13 @@ async def on_ready():
     # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
     logging.info('Logged in as {0} with ID: {1}'
-                 .format(bot.discordClient.user.name, bot.discordClient.user.id))
-    logging.info('Active on these servers: ({0})'.format(len(bot.discordClient.guilds)))
-    for server in bot.discordClient.guilds:
+                 .format(bot.client.user.name, bot.client.user.id))
+    logging.info('Active on these servers: ({0})'.format(len(bot.client.guilds)))
+    for server in bot.client.guilds:
         logging.info('\t{0}'.format(server.name))
 
     logging.info("Owner: {}:{}".format(type(bot.owner), bot.owner))
-    bot.owner = bot.discordClient.get_user(bot.owner_id)
+    bot.owner = bot.client.get_user(bot.owner_id)
     if bot.owner is None:
         raise LinkBotError("Bot owner could not be found in any servers that the bot is a part of.")
     logging.info('Prefix: ' + "'" + bot.prefix + "'")
@@ -43,12 +43,12 @@ async def on_ready():
         await bot.set_game("{}.help".format(bot.prefix))
 
     # IN MY_SERVER, SET ALL NO-ROLE PEOPLE TO ENTRY-LEVEL ROLE.
-    for server in bot.discordClient.guilds:
+    for server in bot.client.guilds:
         if server.id == MY_SERVER_ID:
             entry_level_role = discord.utils.get(server.roles, id=ENTRY_LEVEL_ROLE_ID)
             for member in server.members:
                 if len(member.roles) == 1:
-                    await bot.discordClient.add_roles(member, entry_level_role)
+                    await bot.client.add_roles(member, entry_level_role)
 
     # CHECK FOR SOMEONE'S BIRTHDAY BEING TODAY, IF SO, SEND A MESSAGE TO EVERYONE.
     if not bot.debug:
@@ -60,18 +60,18 @@ async def on_ready():
 
 
 # sets new members' role to the entry level role [Paul's server only]
-@bot.discordClient.event
+@bot.client.event
 async def on_member_join(member):
     # ON MEMBER JOIN "MEN OF THE NORTH"
     if member.server.id is MY_SERVER_ID:  # check for 'is paul's server'
         role = discord.utils.get(member.server.roles, id=ENTRY_LEVEL_ROLE_ID)  # find entry level role
-        await bot.discordClient.add_roles(member, role)  # assign it
+        await bot.client.add_roles(member, role)  # assign it
 
 
 # gets a message, splits it into (command, argstr), then starts the command on a new thread.
-@bot.discordClient.event
+@bot.client.event
 async def on_message(message):
-    if bot.isReadingCommands and message.author.id != bot.discordClient.user.id:
+    if bot.isReadingCommands and message.author.id != bot.client.user.id:
         logging.info("Received a message from " + message.author.name)
 
         cmd = Command(message)

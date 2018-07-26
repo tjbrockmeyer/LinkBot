@@ -4,7 +4,7 @@ from GoogleAPI import GoogleAPIError
 
 @require_args(1)
 @command
-def youtube(cmd: Command):
+async def youtube(cmd: Command):
     # get the search results
     try:
         video_list = bot.googleClient.get_video_search_results(cmd.argstr, 1)

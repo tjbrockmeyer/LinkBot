@@ -5,7 +5,7 @@ from functools import reduce
 @restrict(SERVER_ONLY)
 @require_args(1)
 @command
-def admin(cmd: Command):
+async def admin(cmd: Command):
     if cmd.guild.id not in bot.data:
         bot.data[cmd.guild.id] = {}
     if 'admins' not in bot.data[cmd.guild.id]:

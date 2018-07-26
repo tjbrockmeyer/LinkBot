@@ -7,7 +7,7 @@ from Commands.CmdHelper import *
 @restrict(SERVER_ONLY)
 @require_args(2)
 @command
-def migrate(cmd: Command):
+async def migrate(cmd: Command):
     cmd.args = cmd.argstr.split(',')
     channels = []
     for c in cmd.args:
@@ -39,6 +39,6 @@ def migrate(cmd: Command):
 
     # move each member from the first channel to the second channel.
     for member in channel.voice_members:
-        asyncio.run_coroutine_threadsafe(bot.discordClient.move_member(member, channel2), cmd.loop)
+        await bot.client.move_member(member, channel2)
     bot.send_message(cmd.channel, 'Members in {0} have been migrated to {1}.'.format(channel1.name, channel2.name))
     time.sleep(3)

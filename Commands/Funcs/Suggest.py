@@ -4,7 +4,7 @@ from Main.LinkBot import SUGGESTION_FILE
 
 @require_args(1)
 @command
-def suggest(cmd: Command):
+async def suggest(cmd: Command):
     with bot.lock:
         with open(SUGGESTION_FILE, 'a') as suggestion_file:
             suggestion_file.write(cmd.argstr + '\n')

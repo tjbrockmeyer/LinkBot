@@ -5,7 +5,7 @@ from random import Random
 @restrict(SERVER_ONLY)
 @require_args(1)
 @command
-def deck(cmd: Command):
+async def deck(cmd: Command):
     session_obj = bot.session_objects[cmd.guild]
     subcmd = cmd.args[0].lower()
     cmd.shiftargs()

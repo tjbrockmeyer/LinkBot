@@ -3,7 +3,7 @@ import discord
 
 
 @command
-def help(cmd: Command):
+async def help(cmd: Command):
     # Prevents Circular dependency.
     from Commands.CommandInfo import CommandInfo
 

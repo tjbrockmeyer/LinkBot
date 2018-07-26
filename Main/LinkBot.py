@@ -36,7 +36,7 @@ class LinkBot:
         self.restart = False
         self.paused = False
 
-        self.discordClient = discord.Client()
+        self.client = discord.Client()
         self.messages_to_send = Queue()
         self.messages_received = Queue()
         self.lock = threading.RLock()
@@ -82,7 +82,6 @@ class LinkBot:
 
     # runs commandFunc on a new thread, passing it message and argstr. name becomes the name of the thread.
     def run_command(self, cmd):
-        cmd.loop = asyncio.get_event_loop()
         commandThread = threading.Thread(name='cmd_' + cmd.command, target=LinkBot._safe_command_func, args=(self, cmd))
         commandThread.start()
 
@@ -116,7 +115,7 @@ class LinkBot:
         :return: A new string with the parameters formatted in.
         :rtype: str
         """
-        return "{info} Try `{prefix}help {cmd}` for help on how to use `{cmd_name}`." \
+        return "{info} Try `{prefix}help {cmd}` for help on how to use `{cmd_name}." \
             .format(prefix=self.prefix, cmd=command, info=info, cmd_name=(command if cmd_name is None else cmd_name)) \
             .lstrip()
 
@@ -147,10 +146,10 @@ class LinkBot:
         return user.id == self.owner.id
 
     async def set_game(self, title):
-        await self.discordClient.change_presence(activity=discord.Game(name=title))
+        await self.client.change_presence(activity=discord.Game(name=title))
 
     def build_session_objects(self):
-        for server in self.discordClient.guilds:
+        for server in self.client.guilds:
             self.session_objects[server] = SessionObject()
 
     def save_data(self):
@@ -203,41 +202,13 @@ class LinkBot:
     def run_threaded(self):
         logging.info('Initializing and logging in...')
 
-        # Create thread that runs the bot.
-        botThread = threading.Thread(
-            name='DiscordBot', target=self._bot_thread)
-        botThread.start()
+        messageSender = threading.Thread(
+            name='MSG_Send', target=self._send_message_thread, args=(asyncio.get_event_loop(),))
+        messageSender.setDaemon(True)
+        messageSender.start()
 
-        # wait for the bot to become active. Bot becomes active through the BotThread, in the event on_ready.
-        wait_count = 0
-        while not self.active:
-            # If we wait 10 seconds with no startup, terminate the program.
-            wait_count += 1
-            if wait_count > 10:
-                sys.exit(-1)
-
-            logging.info('Waiting for bot to start.')
-            time.sleep(1)
-
-        if self.isReadingCommands:
-            # Create the thread that sends messages to channels and users.
-            messageSender = threading.Thread(
-                name='MSG_Send', target=self._send_message_thread, args=(asyncio.get_event_loop(),))
-            messageSender.setDaemon(True)
-            messageSender.start()
-
-        while self.isReadingCommands:
-            # Continuously monitor the bot's thread. Terminate the program if it fails.
-            if not botThread.is_alive():
-                sys.exit(-1)
-            time.sleep(5)
-
-        # Wait for any pending operations...
-        time.sleep(1)
-        logging.info('Logging bot out.')
-        asyncio.run_coroutine_threadsafe(self.discordClient.logout(), asyncio.get_event_loop())
-        botThread.join()
-        logging.info('Bot has been logged out. Closing gracefully.')
+        self.client.run(self.token)
+        logging.info('Bot has been logged out.')
 
         if self.restart:
             logging.info("Restarting...")
@@ -246,18 +217,13 @@ class LinkBot:
     @staticmethod
     def _safe_command_func(b, cmd):
         try:
-            cmd.info.func(cmd)
+            asyncio.set_event_loop(cmd.loop)
+            asyncio.run_coroutine_threadsafe(cmd.info.func(cmd), cmd.loop)
         except:
             from functools import reduce
             exc_type, exc_value, exc_traceback = sys.exc_info()
             tb = reduce(lambda x, y: "{}{}".format(x, y), traceback.format_exception(exc_type, exc_value, exc_traceback), "")
             b.send_error_message("Exception occurred in `cmd_{}(cmd)`: ```{}```".format(cmd.info.command, tb))
-
-    # Thread that runs main bot processes.
-    def _bot_thread(self):
-        logging.info("Bot thread started.")
-        asyncio.set_event_loop(asyncio.new_event_loop())
-        self.discordClient.run(self.token)
 
 
     # the thread that sends messages

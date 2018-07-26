@@ -4,7 +4,7 @@ import threading
 
 @restrict(OWNER_ONLY)
 @command
-def logout(cmd: Command):
+async def logout(cmd: Command):
     bot.isReadingCommands = False
     logging.info('Waiting for command threads to finish.')
     for thread in threading.enumerate():
@@ -15,4 +15,4 @@ def logout(cmd: Command):
     logging.info("All threads closed. Logging out.")
 
     bot.send_message(cmd.channel, "Logging out.")
-    bot.active = False
+    await bot.client.logout()

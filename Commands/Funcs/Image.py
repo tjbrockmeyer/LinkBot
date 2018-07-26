@@ -4,7 +4,7 @@ from GoogleAPI import GoogleAPIError
 
 @require_args(1)
 @command
-def image(cmd: Command):
+async def image(cmd: Command):
     # get the search results
     try:
         image_list = bot.googleClient.get_image_search_results(cmd.argstr)

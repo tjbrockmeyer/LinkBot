@@ -6,7 +6,7 @@ from discord.utils import get as get_channel
 @restrict(SERVER_ONLY)
 @require_args(1)
 @command
-def birthday(cmd: Command):
+async def birthday(cmd: Command):
     # create dict for server if it doesn't exist.
     if cmd.guild.id not in bot.data:
         bot.data[cmd.guild.id] = {}
@@ -111,7 +111,7 @@ def birthday_remove(cmd):
 
 def birthday_check():
     today = datetime.now()
-    for server in bot.discordClient.guilds:
+    for server in bot.client.guilds:
         if server.id in bot.data and 'birthdays' in bot.data[server.id]:
             for p, b in bot.data[server.id]['birthdays'].items():
                 bday = datetime.strptime(b, "%m/%d")
