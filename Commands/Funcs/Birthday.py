@@ -25,7 +25,7 @@ async def birthday(cmd: Command):
         cmd.on_syntax_error("Invalid subcommand.")
 
 
-def birthday_list(cmd):
+async def birthday_list(cmd):
     today = datetime.now()
     bdays = []
     for (p, b) in bot.data[cmd.guild.id]['birthdays'].items():
@@ -50,7 +50,7 @@ def birthday_list(cmd):
 @restrict(ADMIN_ONLY)
 @require_args(2)
 @updates_database
-def birthday_set(cmd):
+async def birthday_set(cmd):
     bdayperson = cmd.args[0]
     bdayarg = cmd.args[1]
     # if specified that today is the birthday, set it.
@@ -99,7 +99,7 @@ def birthday_set(cmd):
 @restrict(ADMIN_ONLY)
 @require_args(1)
 @updates_database
-def birthday_remove(cmd):
+async def birthday_remove(cmd):
     person = cmd.args[0]
     if person not in bot.data[cmd.guild.id]['birthdays']:
         bot.send_message(cmd.channel, "{} doesn't have a registered birthday.".format(person))
@@ -109,7 +109,8 @@ def birthday_remove(cmd):
     bot.save_data()
 
 
-def birthday_check():
+@on_event('ready')
+async def birthday_check():
     today = datetime.now()
     for server in bot.client.guilds:
         if server.id in bot.data and 'birthdays' in bot.data[server.id]:

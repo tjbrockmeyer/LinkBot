@@ -5,7 +5,7 @@ from functools import reduce
 @restrict(SERVER_ONLY)
 @require_args(1)
 @command
-def admin(cmd: Command):
+async def admin(cmd: Command):
     if cmd.guild.id not in bot.data:
         bot.data[cmd.guild.id] = {}
     if 'admins' not in bot.data[cmd.guild.id]:
@@ -14,16 +14,16 @@ def admin(cmd: Command):
     subcmd = cmd.args[0].lower()
     cmd.shiftargs()
     if subcmd == "list":
-        admin_list(cmd)
+        await admin_list(cmd)
     elif subcmd == "add":
-        admin_add(cmd)
+        await admin_add(cmd)
     elif subcmd == "remove":
-        admin_remove(cmd)
+        await admin_remove(cmd)
     else:
         bot.send_message(cmd.channel, '{} is not a valid argument.'.format(subcmd))
 
 
-def admin_list(cmd):
+async def admin_list(cmd):
     # Check for existing admins
     if len(bot.data[cmd.guild.id]['admins']) == 0:
         bot.send_message(cmd.channel, 'There are no admins on this server.')
@@ -40,7 +40,7 @@ def admin_list(cmd):
 
 @restrict(ADMIN_ONLY)
 @updates_database
-def admin_add(cmd):
+async def admin_add(cmd):
     # Check that the sender is an admin
     if not bot.is_admin(cmd.author):
         bot.send_message(cmd.channel, "You must be an admin to use this command.")
@@ -73,7 +73,7 @@ def admin_add(cmd):
 
 @restrict(ADMIN_ONLY)
 @updates_database
-def admin_remove(cmd):
+async def admin_remove(cmd):
     # Check that the sender is an admin.
     if not bot.is_admin(cmd.author):
         bot.send_message(cmd.channel, "You must be an admin to use this command.")

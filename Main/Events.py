@@ -2,14 +2,23 @@ import logging
 import discord
 from Main.LinkBot import bot, LinkBotError
 from Commands.Command import Command
+from functools import wraps
 
 
-MY_SERVER_ID = 153368514390917120
-ENTRY_LEVEL_ROLE_ID = 215608168519172096
+def call_events(func):
+    event = func.__name__[3:]
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        await func(*args, **kwargs)
+        if event in bot.events.keys():
+            for f in bot.events[event]:
+                await f(*args, **kwargs)
+    bot.events[event] = []
+    return wrapper
 
 
-# some initialization and setting members with no role to the entry level role [Paul's server only]
 @bot.client.event
+@call_events
 async def on_ready():
 
     # load voice module
@@ -26,45 +35,23 @@ async def on_ready():
     logging.info('Active on these servers: ({})'.format(len(bot.client.guilds)))
     for server in bot.client.guilds:
         logging.info('\t{}'.format(server.name))
-
     bot.owner = bot.client.get_user(bot.owner_id)
     if bot.owner is None:
         raise LinkBotError("Bot owner could not be found in any servers that the bot is a part of.")
     logging.info('Prefix: ' + "'" + bot.prefix + "'")
-
-    # CREATE SERVER-SIDE SESSION OBJECTS
     bot.build_session_objects()
-
     if bot.debug:
         await bot.set_game("Debug")
         logging.info('Currently running in DEBUG mode. Edit source with DEBUG = False to deactivate.')
     else:
         await bot.set_game("{}.help".format(bot.prefix))
-
-    # IN MY_SERVER, SET ALL NO-ROLE PEOPLE TO ENTRY-LEVEL ROLE.
-    for server in bot.client.guilds:
-        if server.id == MY_SERVER_ID:
-            entry_level_role = discord.utils.get(server.roles, id=ENTRY_LEVEL_ROLE_ID)
-            for member in server.members:
-                if len(member.roles) == 1:
-                    await bot.client.add_roles(member, entry_level_role)
-
-    # CHECK FOR SOMEONE'S BIRTHDAY BEING TODAY, IF SO, SEND A MESSAGE TO EVERYONE.
-    if not bot.debug:
-        from Commands.Funcs.Birthday import birthday_check
-        birthday_check()
-
-    bot.active = True
     logging.info('Bot is ready.')
 
 
-# sets new members' role to the entry level role [Paul's server only]
 @bot.client.event
+@call_events
 async def on_member_join(member):
-    # ON MEMBER JOIN "MEN OF THE NORTH"
-    if member.server.id is MY_SERVER_ID:  # check for 'is paul's server'
-        role = discord.utils.get(member.server.roles, id=ENTRY_LEVEL_ROLE_ID)  # find entry level role
-        await bot.client.add_roles(member, role)  # assign it
+    pass
 
 
 # gets a message, splits it into (command, argstr), then starts the command on a new thread.
@@ -79,6 +66,10 @@ async def on_message(message):
         if cmd.has_prefix or cmd.is_dm:
             if not bot.paused or (bot.paused and cmd.command.lower() == 'unpause'):
                 if cmd.is_valid:
-                    bot.run_command(cmd)
+                    await cmd.run()
                 else:
-                    bot.send_message(message.channel, '"' + cmd.command + '" is not a valid command.')
+                    bot.send_message(message.channel, '"{}" is not a valid command.'.format(cmd.command))
+
+
+# To register functions to be called by events.
+import Commands.Funcs as _

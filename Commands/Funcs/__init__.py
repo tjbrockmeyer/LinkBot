@@ -1,5 +1,6 @@
 from Commands.Funcs.Admin import admin
 from Commands.Funcs.Birthday import birthday
+from Commands.Funcs.EntryRole import entryrole
 from Commands.Funcs.Help import help
 from Commands.Funcs.Image import image
 from Commands.Funcs.Logout import logout

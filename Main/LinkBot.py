@@ -31,8 +31,6 @@ class SessionObject:
 
 class LinkBot:
     def __init__(self):
-        self.active = False
-        self.isReadingCommands = True
         self.restart = False
         self.paused = False
 
@@ -42,6 +40,7 @@ class LinkBot:
         self.lock = threading.RLock()
 
         self.lolgame_region = 'na'
+        self.events = {}
         self.session_objects = {}
         self.data = load_json(DATABASE_FILE)
         # { serverID: {
@@ -83,11 +82,6 @@ class LinkBot:
 
         self.googleClient = GoogleAPI.Client(google_apikey) if google_apikey is not None else None
         self.riotClient = RiotAPI.Client(riot_apikey) if riot_apikey is not None else None
-
-    # runs commandFunc on a new thread, passing it message and argstr. name becomes the name of the thread.
-    def run_command(self, cmd):
-        commandThread = threading.Thread(name='cmd_' + cmd.command, target=LinkBot._safe_command_func, args=(self, cmd))
-        commandThread.start()
 
     # adds a message that is to be sent to the message queue. The message is then sent by the send message thread.
     def send_message(self, destination, message='', embed=None):
@@ -207,8 +201,7 @@ class LinkBot:
         logging.info('Initializing and logging in...')
 
         messageSender = threading.Thread(
-            name='MSG_Send', target=self._send_message_thread, args=(asyncio.get_event_loop(),))
-        messageSender.setDaemon(True)
+            name='MSG_Send', daemon=True, target=self._send_message_thread, args=(asyncio.get_event_loop(),))
         messageSender.start()
 
         self.client.run(self.token)
@@ -218,20 +211,6 @@ class LinkBot:
             logging.info("Restarting...")
             os.execl(sys.executable, sys.executable, *sys.argv)
 
-    @staticmethod
-    def _safe_command_func(b, cmd):
-        try:
-            asyncio.set_event_loop(cmd.loop)
-            if asyncio.iscoroutinefunction(cmd.info.func):
-                asyncio.run_coroutine_threadsafe(cmd.info.func(cmd), cmd.loop)
-            else:
-                cmd.info.func(cmd)
-        except:
-            from functools import reduce
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            tb = reduce(lambda x, y: "{}{}".format(x, y), traceback.format_exception(exc_type, exc_value, exc_traceback), "")
-            b.send_error_message("Exception occurred in `cmd_{}(cmd)`: ```{}```".format(cmd.info.command, tb))
-
 
     # the thread that sends messages
     def _send_message_thread(self, loop):
@@ -239,7 +218,7 @@ class LinkBot:
 
         # This is a blocking call. Waits for messages to enter the message queue.
         # While there are messages, or we are still reading, or the bot is still active...
-        while not self.messages_to_send.empty() or self.active or self.isReadingCommands:
+        while not self.messages_to_send.empty():
             channel, message, embed = self.messages_to_send.get()
             logging.info('Sending message ' +
                          ('with embed ' if embed is not None else '') +
