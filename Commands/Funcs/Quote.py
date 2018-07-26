@@ -18,23 +18,20 @@ async def quote(cmd: Command):
     subcmd = cmd.args[0]
     cmd.shiftargs()
     if subcmd.isdigit():
-        await quote_id(cmd)
+        quote_id(cmd, int(subcmd))
     elif subcmd.lower() == "random":
-        await quote_random(cmd)
+        quote_random(cmd)
     elif subcmd.lower() == "list":
-        await quote_list(cmd)
+        quote_list(cmd)
     elif subcmd.lower() == "add":
-        await quote_add(cmd)
+        quote_add(cmd)
     elif subcmd.lower() == "remove":
-        await quote_remove(cmd)
+        quote_remove(cmd)
     else:
         cmd.on_syntax_error('Invalid sub-command.')
 
 
-@require_args(1)
-def quote_id(cmd):
-    qid = int(cmd.args[0])
-
+def quote_id(cmd, qid):
     # check that quote id is within bounds
     if 0 <= qid < len(bot.data[cmd.guild.id]['quotes']):
         (author, text) = bot.data[cmd.guild.id]['quotes'][qid]
