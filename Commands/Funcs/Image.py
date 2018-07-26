@@ -1,15 +1,10 @@
 from Commands.CmdHelper import *
 from GoogleAPI import GoogleAPIError
 
-# link the first image found using the provided query
-def cmd_image(cmd: Command):
-    logging.info('Command: image')
 
-    # check for missing args
-    if len(cmd.args) == 0:
-        cmd.on_syntax_error('You must provide a query to search for.')
-        return
-
+@require_args(1)
+@command
+def image(cmd: Command):
     # get the search results
     try:
         image_list = bot.googleClient.get_image_search_results(cmd.argstr)

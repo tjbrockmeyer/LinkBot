@@ -28,7 +28,7 @@ async def on_ready():
         logging.info('\t{0}'.format(server.name))
 
     logging.info("Owner: {}:{}".format(type(bot.owner), bot.owner))
-    bot.owner = bot.discordClient.get_user(bot.owner)
+    bot.owner = bot.discordClient.get_user(bot.owner_id)
     if bot.owner is None:
         raise LinkBotError("Bot owner could not be found in any servers that the bot is a part of.")
     logging.info('Prefix: ' + "'" + bot.prefix + "'")

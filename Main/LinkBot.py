@@ -47,7 +47,7 @@ class LinkBot:
         # { serverID: {
         #       "admins" : [ userID, ... ],
         #       "birthdays" : { name : birthday, ...},
-        #       "quotes" : [ ( quote, author ), ... ]
+        #       "quotes" : [ ( text, author ), ... ]
         # }
 
         # Read from the config file
@@ -56,7 +56,7 @@ class LinkBot:
             raise LinkBotError("Config has been created. Fill out the required information before continuing.")
 
         options = read_config(CONFIG_FILE)
-        self.owner = options.get('ownerDiscordId')
+        self.owner_id = options.get('ownerDiscordId')
         self.token = options.get('botToken')
         self.client_id = options.get('botClientId')
         self.client_secret = options.get('botClientSecret')
@@ -67,12 +67,13 @@ class LinkBot:
 
         if self.token is None or self.client_id is None or self.client_secret is None:
             raise LinkBotError("All three of 'botToken', 'botClientId', and 'botClientSecret' must be specified in {}.".format(CONFIG_FILE))
-        if self.owner is None:
+        if self.owner_id is None:
             raise LinkBotError("'ownerDiscordId' must be specified with your Discord user ID in {}.".format(CONFIG_FILE))
         if self.prefix is None:
             raise LinkBotError("'prefix' must be specified in {} for proper functionality.".format(CONFIG_FILE))
 
-        self.owner = int(self.owner)
+        self.owner_id = int(self.owner_id)
+        self.owner = None
         self.client_id = int(self.client_id)
         self.debug = False if debug is None else (True if debug.lower() in ['t', 'true', '1'] else False)
 
@@ -101,7 +102,7 @@ class LinkBot:
         self.send_message(self.owner, message)
         logging.error(message)
 
-    def on_syntax_error(self, command: str, info: str) -> str:
+    def on_syntax_error(self, command: str, info='', cmd_name=None) -> str:
         """
         To be called when there has been a syntax error in a command.
         Returns info and command formatted into a help string.
@@ -110,11 +111,14 @@ class LinkBot:
         :type command: str
         :param info: Some info as to what went wrong with the syntax.
         :type info: str
+        :param cmd_name: Alternative name for the command - usually for a sub-command.
+        :type cmd_name: str
         :return: A new string with the parameters formatted in.
         :rtype: str
         """
-        return "{info} Try `{prefix}help {cmd}` for help on how to use {cmd}."\
-            .format(prefix=self.prefix, cmd=command, info=info)
+        return "{info} Try `{prefix}help {cmd}` for help on how to use `{cmd_name}`." \
+            .format(prefix=self.prefix, cmd=command, info=info, cmd_name=(command if cmd_name is None else cmd_name)) \
+            .lstrip()
 
     def is_admin(self, member):
         """
@@ -207,10 +211,10 @@ class LinkBot:
         # wait for the bot to become active. Bot becomes active through the BotThread, in the event on_ready.
         wait_count = 0
         while not self.active:
-            # If we wait 10 seconds with no startup, restart the program.
+            # If we wait 10 seconds with no startup, terminate the program.
             wait_count += 1
             if wait_count > 10:
-                os.execl(sys.executable, sys.executable, *sys.argv)
+                sys.exit(-1)
 
             logging.info('Waiting for bot to start.')
             time.sleep(1)
@@ -223,9 +227,9 @@ class LinkBot:
             messageSender.start()
 
         while self.isReadingCommands:
-            # Continuously monitor the bot's thread. Restart the program if it fails.
+            # Continuously monitor the bot's thread. Terminate the program if it fails.
             if not botThread.is_alive():
-                os.execl(sys.executable, sys.executable, *sys.argv)
+                sys.exit(-1)
             time.sleep(5)
 
         # Wait for any pending operations...
@@ -243,7 +247,7 @@ class LinkBot:
     def _safe_command_func(b, cmd):
         try:
             cmd.info.func(cmd)
-        except Exception as e:
+        except:
             from functools import reduce
             exc_type, exc_value, exc_traceback = sys.exc_info()
             tb = reduce(lambda x, y: "{}{}".format(x, y), traceback.format_exception(exc_type, exc_value, exc_traceback), "")

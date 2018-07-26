@@ -1,57 +1,12 @@
-import asyncio
 from Commands.CmdHelper import *
 from Main.Funcs import format_as_column
 from RiotAPI import *
 
 
-class PlayerOutput:
-    def __init__(self, name, champion):
-        self.name = name
-        self.champion = champion
-        self.rank = 'UNRANKED'
-        self.lp = ''
-        self.series = ''
-        self.streak = '-'
-        self.games = '-'
-        self.winrate = '-'
-
-
-def format_as_lolplayer_output(p):
-    """
-    Formats a player's in-game information into columns for outputting in monospace.
-
-    :param p: The player whose output should be formatted.
-    :type p: PlayerOutput
-    :return: A string with the formatting applied.
-    :rtype: str
-    """
-    string = format_as_column(p.name, 17, alignment=1) \
-             + ' ' \
-             + format_as_column(p.rank, 15, alignment=-1) \
-             + format_as_column(str(p.lp), 6, alignment=-1) \
-             + format_as_column(p.series, 6, alignment=0) \
-             + format_as_column(p.champion.name, 15, alignment=0) \
-             + format_as_column(str(p.games), 6, alignment=0) \
-             + format_as_column(str(p.winrate) + '%', 8, alignment=0) \
-             + '\n'
-    return string
-
-
-def notify_of_unknown_error(channel, error):
-    bot.send_error_message('Error code: ' + str(error.status_code) + '\n' + error.url + '\n' + error.message)
-    bot.send_message(channel, "An error occurred. Aborting the lookup.")
-
-
-# write relavent info about the provided player's league of legends game
-# @disabled_command("Need a project API key.")
-def cmd_lolgame(cmd: Command):
-    logging.info('Command: lolgame')
-
-    # check for invalid argument count
-    if len(cmd.args) < 1:
-        cmd.on_syntax_error('You must provide a summoner name.')
-        return
-
+@restrict(0)
+@require_args(1)
+@command
+def lolgame(cmd: Command):
     args = cmd.argstr.split(',')
 
     # get args
@@ -76,7 +31,7 @@ def cmd_lolgame(cmd: Command):
         if e.status_code == 404:
             bot.send_message(cmd.channel, "{} does not exist on the {} server.".format(arg_summoner, bot.riotClient.region))
         else:
-            notify_of_unknown_error(cmd.channel, e)
+            _notify_of_unknown_error(cmd.channel, e)
         return
 
     # get summoner's game
@@ -86,7 +41,7 @@ def cmd_lolgame(cmd: Command):
         if e.status_code == 404:
             bot.send_message(cmd.channel, "{} is not in a game.".format(summoner.name))
         else:
-            notify_of_unknown_error(cmd.channel, e)
+            _notify_of_unknown_error(cmd.channel, e)
         return
 
     # begin organizing data
@@ -97,7 +52,7 @@ def cmd_lolgame(cmd: Command):
     try:
         champions = bot.riotClient.get_champion_static_all()
     except RiotAPIError as e:
-        notify_of_unknown_error(cmd.channel, e)
+        _notify_of_unknown_error(cmd.channel, e)
         return
 
     # list for both teams and the output string.
@@ -124,7 +79,7 @@ def cmd_lolgame(cmd: Command):
                         p.games = entry.wins + entry.losses
                         p.winrate = "{:0.2f}".format(entry.wins / float(p.games) if p.games != 0 else entry.wins)
             except RiotAPIError as e:
-                notify_of_unknown_error(cmd.channel, e)
+                _notify_of_unknown_error(cmd.channel, e)
 
     # begin formatting output
     gamestring = '```League of Legends Game for {}:\n'.format(summoner.name) + \
@@ -138,7 +93,7 @@ def cmd_lolgame(cmd: Command):
                  format_as_column('Games', 6, alignment=0) + \
                  format_as_column('Win%', 8, alignment=0) + '\n'
     for p in blueteam:
-        gamestring += format_as_lolplayer_output(p)
+        gamestring += _format_as_lolplayer_output(p)
     gamestring += '\nRED TEAM (Top Right):\n' + \
                   format_as_column('Summoner Name', 17, alignment=1) + \
                   format_as_column('Rank', 16, alignment=0) + \
@@ -148,9 +103,47 @@ def cmd_lolgame(cmd: Command):
                   format_as_column('Games', 6, alignment=0) + \
                   format_as_column('Win%', 8, alignment=0) + '\n'
     for p in redteam:
-        gamestring += format_as_lolplayer_output(p)
+        gamestring += _format_as_lolplayer_output(p)
     gamestring += '```'
 
     bot.send_message(cmd.channel, gamestring)
     logging.info("Sent League of Legends game info.")
+
+
+class PlayerOutput:
+    def __init__(self, name, champion):
+        self.name = name
+        self.champion = champion
+        self.rank = 'UNRANKED'
+        self.lp = ''
+        self.series = ''
+        self.streak = '-'
+        self.games = '-'
+        self.winrate = '-'
+
+
+def _format_as_lolplayer_output(p):
+    """
+    Formats a player's in-game information into columns for outputting in monospace.
+
+    :param p: The player whose output should be formatted.
+    :type p: PlayerOutput
+    :return: A string with the formatting applied.
+    :rtype: str
+    """
+    string = format_as_column(p.name, 17, alignment=1) \
+             + ' ' \
+             + format_as_column(p.rank, 15, alignment=-1) \
+             + format_as_column(str(p.lp), 6, alignment=-1) \
+             + format_as_column(p.series, 6, alignment=0) \
+             + format_as_column(p.champion.name, 15, alignment=0) \
+             + format_as_column(str(p.games), 6, alignment=0) \
+             + format_as_column(str(p.winrate) + '%', 8, alignment=0) \
+             + '\n'
+    return string
+
+
+def _notify_of_unknown_error(channel, error):
+    bot.send_error_message('Error code: ' + str(error.status_code) + '\n' + error.url + '\n' + error.message)
+    bot.send_message(channel, "An error occurred. Aborting the lookup.")
 

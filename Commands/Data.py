@@ -3,7 +3,7 @@ from Commands.Funcs import *
 
 COMMANDS = {
     'help': {
-        'func': cmd_help,
+        'func': help,
         'syntax': ["help [here] [command]"],
         'description': "Pastes help into a DM with the user who sent the command.",
         'examples': [
@@ -16,7 +16,7 @@ COMMANDS = {
         ]
     },
     'migrate': {
-        'func': cmd_migrate,
+        'func': migrate,
         'syntax': ["migrate <ch>, <ch>"],
         'description': "Moves all members inside voice channel 1 to voice channel 2.",
         'examples': [
@@ -27,7 +27,7 @@ COMMANDS = {
         ]
     },
     'quote': {
-        'func': cmd_quote,
+        'func': quote,
         'syntax': ["quote <#id>", "quote list [author]", "quote random [author]",
                     "quote add <quote -author>", "quote remove <#id>"],
         'description': "Get a quote, list them all or add/remove a quote.",
@@ -51,7 +51,7 @@ COMMANDS = {
         ]
     },
     'birthday': {
-        'func': cmd_birthday,
+        'func': birthday,
         'syntax': ["birthday list", "birthday set <name> <mm/dd>", "birthday remove <name>"],
         'description': "Set, remove, or list the registered birthdays from the database.",
         'examples': [
@@ -64,7 +64,7 @@ COMMANDS = {
         ]
     },
     'lolgame': {
-        'func': cmd_lolgame,
+        'func': lolgame,
         'syntax': ["lolgame <player> [region]"],
         'description': "Sends info to the channel about `summoner`'s current League of Legends game.",
         'examples': [
@@ -80,7 +80,7 @@ COMMANDS = {
         'alias': 'youtube'
     },
     'youtube': {
-        'func': cmd_youtube,
+        'func': youtube,
         'syntax': ["youtube <query>", "yt <query>"],
         'description': "Links the first video result of a YouTube search for query",
         'examples': [
@@ -94,7 +94,7 @@ COMMANDS = {
         'alias': 'image'
     },
     'image': {
-        'func': cmd_image,
+        'func': image,
         'syntax': ["image <query>", "img <query>"],
         'description': "Links the first image result of a Google Image search for `query`.",
         'examples': [
@@ -105,7 +105,7 @@ COMMANDS = {
         ]
     },
     'play': {
-        'func': cmd_play,
+        'func': play,
         'syntax': ["play"],
         'description': "Plays something in voice chat with you!",
         'examples': [
@@ -114,7 +114,7 @@ COMMANDS = {
         ]
     },
     'deck': {
-        'func': cmd_deck,
+        'func': deck,
         'syntax': ["deck status", "deck setup preset <preset>", "deck setup (clear|none)",
                    "deck setup add <list of cards>", "deck setup custom <list of cards>",
                    "deck shuffle", "deck draw [public]"],
@@ -139,7 +139,7 @@ COMMANDS = {
         ]
     },
     'suggest': {
-        'func': cmd_suggest,
+        'func': suggest,
         'syntax': ["suggest <feature>"],
         'description': "Suggest a feature that you think the bot should have. Your suggestion will be saved in a suggestions file.",
         'examples': [
@@ -151,7 +151,7 @@ COMMANDS = {
         'alias': 'pause'
     },
     'pause': {
-        'func': cmd_pause,
+        'func': pause,
         'syntax': ["pause", "unpause"],
         'description': "Pause or unpause the bot. Pausing will prevent the bot from receiving commands until unpaused.",
         'examples': [
@@ -162,7 +162,7 @@ COMMANDS = {
         ]
     },
     'admin': {
-        'func': cmd_admin,
+        'func': admin,
         'syntax': ["admin list", "admin add <@user|@role>", "admin remove <@user|@role>"],
         'description': "List admins, or add/remove them.",
         'examples': [
@@ -182,7 +182,7 @@ COMMANDS = {
         'alias': 'update'
     },
     'update': {
-        'func': cmd_update,
+        'func': update,
         'syntax': ["update", "upgrade"],
         'description': "**Owner Only** Updates the bot to the newest version, then restarts.",
         'examples': [
@@ -194,7 +194,7 @@ COMMANDS = {
         'alias': 'logout'
     },
     'logout': {
-        'func': cmd_logout,
+        'func': logout,
         'syntax': ["logout", "logoff"],
         'description': "**Owner Only** Logs the bot out.",
         'examples': [

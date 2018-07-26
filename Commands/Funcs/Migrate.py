@@ -4,20 +4,10 @@ import discord
 from Commands.CmdHelper import *
 
 
-# move all members in a particular voice chat to a different one
-def cmd_migrate(cmd: Command):
-    logging.info("Command: migrate")
-
-    # On Server check.
-    if cmd.guild is None:
-        bot.send_message(cmd.channel, "You can only use this command on a server.")
-        return
-
-    # Enough args check.
-    if len(cmd.args) < 2:
-        cmd.on_syntax_error('Provide two voice channels as arguments.')
-        return
-
+@restrict(SERVER_ONLY)
+@require_args(2)
+@command
+def migrate(cmd: Command):
     cmd.args = cmd.argstr.split(',')
     channels = []
     for c in cmd.args:

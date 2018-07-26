@@ -69,5 +69,11 @@ class Command:
         self.is_valid = self.info is not None
 
 
-    def on_syntax_error(self, info):
-        bot.send_message(self.channel, bot.on_syntax_error(self.command, info))
+    def on_syntax_error(self, info='', cmd_name=None):
+        bot.send_message(self.channel, bot.on_syntax_error(self.command, info, cmd_name))
+
+    def shiftargs(self, count=1):
+        while count > 0 and len(self.args) > 0:
+            self.argstr = self.argstr[len(self.args[0]):].lstrip()
+            self.args = self.args[1:]
+            count -= 1
