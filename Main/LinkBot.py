@@ -14,49 +14,46 @@ import RiotAPI
 
 
 DATA_FOLDER = 'data/'
-CONFIG_FILE = DATA_FOLDER + 'config.txt'
+CONFIG_FILE = DATA_FOLDER + 'config.ini'
 SUGGESTION_FILE = DATA_FOLDER + 'suggestions.txt'
 DATABASE_FILE = DATA_FOLDER + 'database.json'
+REMINDERS_FILE = DATA_FOLDER + 'reminders.json'
 
 
 class LinkBotError(Exception):
     pass
 
 
-class SessionObject:
-    def __init__(self):
-        self.original_deck = []
-        self.deck = []
-
-
 class LinkBot:
     def __init__(self):
+        # If the config file doesn't exist, create it with the defaults.
+        if not os.path.isfile(CONFIG_FILE):
+            self.create_config()
+            raise LinkBotError("Config has been created. Fill out the required information before continuing.")
+
         self.restart = False
         self.paused = False
-
         self.client = discord.Client()
         self.messages_to_send = Queue()
         self.messages_received = Queue()
         self.lock = threading.RLock()
 
         self.lolgame_region = 'na'
+        self.commands = {}
         self.events = {}
-        self.session_objects = {}
         self.data = load_json(DATABASE_FILE)
         # { serverID: {
         #       "admins" : [ userID, ... ],
         #       "birthdays" : { name : birthday, ...},
         #       "quotes" : [ ( text, author ), ... ]
         # }
+
+        # All server ids are stored as strings by the json module.
+        # Thus, they must get converted into integers here before they can be used with discord.py.
         records = [(key, val) for (key, val) in self.data.items()]
         for (key, val) in records:
             self.data[int(key)] = val
             del self.data[key]
-
-        # Read from the config file
-        if not os.path.isfile(CONFIG_FILE):  # if the config file doesn't exist, create it with the defaults.
-            self.create_config()
-            raise LinkBotError("Config has been created. Fill out the required information before continuing.")
 
         options = read_config(CONFIG_FILE)
         self.owner_id = options.get('ownerDiscordId')
@@ -89,7 +86,7 @@ class LinkBot:
             split_index = message.rfind('\n', 0, 2000)
             if split_index == -1:
                 split_index = 2000
-            self.send_message(destination, message[:split_index], embed)
+            self.messages_to_send.put((destination, message[:split_index], embed))
             self.send_message(destination, message[split_index:], embed)
         else:
             self.messages_to_send.put((destination, message, embed))
@@ -145,10 +142,6 @@ class LinkBot:
 
     async def set_game(self, title):
         await self.client.change_presence(activity=discord.Game(name=title))
-
-    def build_session_objects(self):
-        for server in self.client.guilds:
-            self.session_objects[server] = SessionObject()
 
     def save_data(self):
         with self.lock:
@@ -206,6 +199,7 @@ class LinkBot:
 
         self.client.run(self.token)
         logging.info('Bot has been logged out.')
+        messageSender.join(timeout=5)
 
         if self.restart:
             logging.info("Restarting...")
@@ -214,24 +208,21 @@ class LinkBot:
 
     # the thread that sends messages
     def _send_message_thread(self, loop):
-        logging.info("Send Message thread started.")
+        async def message_pass(chn, msg, emb):
+            if emb is None:
+                await chn.send("`[DEBUG]` " + msg if self.debug else msg)
+            else:
+                await chn.send("`[DEBUG]` " + msg if self.debug else msg, embed=emb)
 
-        # This is a blocking call. Waits for messages to enter the message queue.
-        # While there are messages, or we are still reading, or the bot is still active...
-        while not self.messages_to_send.empty():
+        logging.info("Send Message thread started.")
+        while True:
             channel, message, embed = self.messages_to_send.get()
+            if channel is None and message is None and embed is None:
+                break
+            asyncio.run_coroutine_threadsafe(message_pass(channel, message, embed), loop)
             logging.info('Sending message ' +
                          ('with embed ' if embed is not None else '') +
                          'to {}: {}'.format(channel, message))
-
-            # Check if the message has an embed. If so, apply it.
-            if embed is None:
-                asyncio.run_coroutine_threadsafe(channel.send(
-                    ("`[DEBUG]` " + message if self.debug else message)), loop)
-            else:
-                asyncio.run_coroutine_threadsafe(channel.send(
-                    ("`[DEBUG]` " + message if self.debug else message), embed=embed), loop)
-        time.sleep(1)  # wait for any final commands to send.
 
 
 bot = LinkBot()

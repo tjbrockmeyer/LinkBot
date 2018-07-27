@@ -5,9 +5,26 @@ import re
 from Commands.CmdHelper import *
 
 
+@command(
+    ["{c} <#id>", "{c} list [author]", "{c} random [author]",
+     "{c} add <quote -author>", "{c} remove <#id>"],
+    "Get a quote, list them all or add/remove a quote.",
+    [
+        ("{c} 21", "Writes the quote with an ID of 21. If you don't know the quote ID, use:"),
+        (
+        "{c} list", "Lists all quote for the server. You can even filter it for only quotes from a particular author:"),
+        ("{c} list LocalIdiot", "This will show all quotes from LocalIdiot."),
+        ("{c} random", "Gets a random quote from the server."),
+        ("{c} random Jimbob", "gets a random quote from Jimbob."),
+        ("{c} add Hey, it's me! -Dawson", "This will add \"Hey, it's me\" as a quote from Dawson."),
+        ("{c} add Anyone: Hey Daws.\nDawson: Seeya!",
+         "You can separate different parts of a quote using a new line (shift+enter)."),
+        ("{c} remove 12",
+         "This will remove the quote that has an ID of 12. Remember to check 'quote list' to get the ID!")
+    ]
+)
 @restrict(SERVER_ONLY)
 @require_args(1)
-@command
 async def quote(cmd: Command):
     # if there have not been any registered quotes yet, create the list.
     if not cmd.guild.id in bot.data:

@@ -1,8 +1,14 @@
 from Commands.CmdHelper import *
 
 
+@command(
+    ["{c}"],
+    "Plays something in voice chat with you!",
+    [
+        ("play", "Bot joins the voice channel with you.")
+    ]
+)
 @restrict(DISABLE | SERVER_ONLY, "Not currently implemented")
-@command
 async def play(cmd: Command):
     voice = cmd.author.voice
     if voice.voice_channel is None:

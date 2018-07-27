@@ -1,6 +1,5 @@
 from functools import reduce
 
-from Commands.Data import COMMANDS
 from Main.LinkBot import bot
 
 
@@ -11,9 +10,9 @@ class CmdExample:
     :cmd: (str) The example use of the command.
     :effect: (str) The descriptive effect of the example.
     """
-    def __init__(self, ex):
-        self.cmd = ex['command']
-        self.effect = ex['effect']
+    def __init__(self, cmd, effect):
+        self.cmd = cmd
+        self.effect = effect
 
 
 class CommandInfo:
@@ -25,13 +24,14 @@ class CommandInfo:
     :description: (str) A description of the function of this command.
     :examples: (list[CmdExample]) A list of examples.
     """
-    def __init__(self, cmd):
-        self.command = cmd
-        cmd_dict = COMMANDS[cmd]
-        self.func = cmd_dict['func']
-        self.syntax = cmd_dict['syntax']
-        self.description = cmd_dict['description']
-        self.examples = [CmdExample(ex) for ex in cmd_dict['examples']]
+    def __init__(self, name, func, syntax, description, examples, aliases, show_in_help):
+        self.command = name
+        self.func = func
+        self.syntax = [s.format(c=(bot.prefix + name)) for s in syntax]
+        self.description = description
+        self.examples = [CmdExample(cmd.format(c=(bot.prefix + name)), effect) for (cmd, effect) in examples]
+        self.aliases = aliases
+        self.show_in_help = show_in_help
 
     def get_syntax_with_format(self, mk_down='`', sep=' || '):
         """
@@ -73,7 +73,7 @@ class CommandInfo:
         :param bool inline: Should this embed be created inline?
         """
         embed.add_field(
-            name="{mk}{cmd}{mk}".format(cmd=self.command, mk=title_mk_down),
+            name="{mk}{cmd}{mk}".format(cmd=' | '.join([self.command] + self.aliases), mk=title_mk_down),
             value=self.get_syntax_with_format(mk_down, sep), inline=inline)
 
     def embed_examples(self, embed, cmd_as_code=True):
@@ -84,49 +84,6 @@ class CommandInfo:
         :param bool cmd_as_code: Should each command portion be shown as a code snippet?
         """
         for ex in self.examples:
-            embed.add_field(name="{tick}{cmd}{tick}"
+            embed.add_field(name="{mk}{cmd}{mk}"
                             .format(cmd=ex.cmd.format(prefix=bot.prefix),
-                                    tick='`' if cmd_as_code else ''), value=ex.effect, inline=True)
-
-    @staticmethod
-    def is_command(cmdstr):
-        """
-        Returns true if the passed command string is a valid command.
-
-        :param cmdstr: Command to check validity of.
-        :type cmdstr: str
-        :return: True if the command is valid, False otherwise.
-        :rtype: bool
-        """
-        return cmdstr in COMMANDS
-
-
-    @staticmethod
-    def get_command_info(cmdstr):
-        """
-        Gets the CommandInfo within the COMMANDS dict that belongs to this command. Follows aliases.
-
-        :param cmdstr: Command name as a string.
-        :type cmdstr: str
-        :return: The CommandInfo containing 'func', 'syntax', and 'help' for cmd. Returns None if cmd was not found.
-        :rtype: CommandInfo
-        """
-        if cmdstr in COMMANDS:
-            if 'alias' in COMMANDS[cmdstr]:
-                return CommandInfo.get_command_info(COMMANDS[cmdstr]['alias'])
-            return CommandInfo(cmdstr)
-        return None
-
-
-    @staticmethod
-    def enumerate_commands_abc():
-        """
-        Enumerates the list of commands in alphabetical order.
-
-        :return: A tuple of (commandString, CommandInfo for commandString)
-        :rtype: str, CommandInfo
-        """
-        # get a sorted list of all commands that are not aliases
-        commands = [x for x in COMMANDS if 'alias' not in COMMANDS[x]]
-        for cmd in sorted(commands):
-            yield CommandInfo(cmd)
+                                    mk='`' if cmd_as_code else ''), value=ex.effect, inline=True)

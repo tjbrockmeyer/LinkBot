@@ -63,7 +63,7 @@ class Command:
                 self.args.append(x)
 
         # Get info
-        self.info = CommandInfo.get_command_info(self.command.lower())
+        self.info = bot.commands.get(self.command.lower())
         self.is_valid = self.info is not None
 
 

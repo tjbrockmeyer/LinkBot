@@ -5,7 +5,15 @@ MY_SERVER_ID = 153368514390917120
 ENTRY_LEVEL_ROLE_ID = 215608168519172096
 
 
-@command
+@command(
+    ['{c} set <role_id>', '{c} remove'],
+    'Set/remove the role to be used as the entry level role.',
+    [
+        ('{c} set 1234567890', 'Sets the entry level role for this server to the role with an id of 1234567890.'),
+        ('{c} remove', 'Removes automatic entry level role setting for this server.')
+    ]
+)
+@restrict(SERVER_ONLY)
 async def entryrole(cmd):
     pass
 

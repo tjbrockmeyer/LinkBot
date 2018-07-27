@@ -2,10 +2,18 @@ from Commands.CmdHelper import *
 import threading
 
 
+@command(
+    ["{c}"],
+    "**Owner Only** Logs the bot out.",
+    [
+        ("logout", "Logs the bot out.")
+    ],
+    aliases=['logoff'],
+    show_in_help=False
+)
 @restrict(OWNER_ONLY)
-@command
 async def logout(cmd: Command):
-    bot.isReadingCommands = False
+    bot.send_message(None, None, None)
     logging.info('Waiting for command threads to finish.')
     for thread in threading.enumerate():
         if thread.name.startswith('cmd') and thread.is_alive() \
@@ -14,5 +22,5 @@ async def logout(cmd: Command):
             thread.join()
     logging.info("All threads closed. Logging out.")
 
-    bot.send_message(cmd.channel, "Logging out.")
+    await cmd.channel.send("Logging out.")
     await bot.client.logout()

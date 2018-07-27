@@ -2,9 +2,19 @@ from Commands.CmdHelper import *
 from functools import reduce
 
 
+@command(
+    ["{c} list", "admin add <@user|@role>", "admin remove <@user|@role>"],
+    "List admins, or add/remove them.",
+    [
+        ("{c} list", "Lists all of the admins for this server."),
+        ("{c} add @JoeBlow", "Adds JoeBlow as an admin. This has to be a valid mention!"),
+        ("{c} add @TheBigDawgs", "If TheBigDawgs is a role, adds all members of TheBigDawgs as admins."),
+        ("{c} add @JoeBlow @TheBigDawgs", "Chain mentions together to add multiple people and/or roles as admins"),
+        ("{c} remove @JoeBlow @TheBigDawgs", "Removing admins works the same way.")
+    ]
+)
 @restrict(SERVER_ONLY)
 @require_args(1)
-@command
 async def admin(cmd: Command):
     if cmd.guild.id not in bot.data:
         bot.data[cmd.guild.id] = {}

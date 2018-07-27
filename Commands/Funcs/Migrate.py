@@ -4,9 +4,16 @@ import discord
 from Commands.CmdHelper import *
 
 
+@command(
+    ["{c} <ch>, <ch>"],
+    "Moves all members inside voice channel 1 to voice channel 2.",
+    [
+        ("{c} BK lounge, The Potion Shop", "Moves everyone in the BK Lounge to the Potion Shop."),
+        ("{c} bk lounge, the potion shop", "It's not case sensitive, so this would still work with the same effect.")
+    ]
+)
 @restrict(SERVER_ONLY)
 @require_args(2)
-@command
 async def migrate(cmd: Command):
     cmd.args = cmd.argstr.split(',')
     channels = []

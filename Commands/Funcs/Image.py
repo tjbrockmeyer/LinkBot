@@ -2,8 +2,15 @@ from Commands.CmdHelper import *
 from GoogleAPI import GoogleAPIError
 
 
+@command(
+    ["{c} <query>"],
+    "Links the first image result of a Google Image search for `query`.",
+    [
+        ("{c} what blind people see", "Links the first result of a google image search for 'what blind people see'.")
+    ],
+    aliases=['img']
+)
 @require_args(1)
-@command
 async def image(cmd: Command):
     # get the search results
     try:

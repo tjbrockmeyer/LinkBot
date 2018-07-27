@@ -2,8 +2,16 @@ from Commands.CmdHelper import *
 from GoogleAPI import GoogleAPIError
 
 
+@command(
+    ["{c} <query>"],
+    "Links the first video result of a YouTube search for query",
+    [
+        ("{c} the dirtiest of dogs",
+         "This will link the first youtube video found in the search results for 'the dirtiest of dogs'.")
+    ],
+    aliases=['yt']
+)
 @require_args(1)
-@command
 async def youtube(cmd: Command):
     # get the search results
     try:

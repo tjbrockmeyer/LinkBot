@@ -4,6 +4,7 @@ import asyncio
 import discord
 from Main.LinkBot import bot, LinkBotError
 from Commands.Command import Command
+from Commands.CommandInfo import CommandInfo
 from functools import wraps
 
 
@@ -70,12 +71,13 @@ def updates_database(func):
     return wrapper
 
 
-def command(func):
+def background_task(func):
     @wraps(func)
-    async def wrapper(cmd, *args, **kwargs):
-        logging.info("Running command: {}".format(func.__name__))
-        await func(cmd, *args, **kwargs)
-        logging.info("Command complete: {}".format(func.__name__))
+    async def wrapper():
+        await bot.client.wait_until_ready()
+        await func()
+
+    bot.client.loop.create_task(wrapper())
     return wrapper
 
 
@@ -86,6 +88,23 @@ def on_event(event_name):
         else:
             bot.events[event_name].append(func)
         return func
+    return decorator
+
+
+def command(syntax, description, examples, aliases=None, show_in_help=True):
+    aliases = aliases or []
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(cmd, *args, **kwargs):
+            logging.info("Running command: {}".format(func.__name__))
+            await func(cmd, *args, **kwargs)
+            logging.info("Command complete: {}".format(func.__name__))
+
+        cmd_info = CommandInfo(func.__name__, wrapper, syntax, description, examples, aliases, show_in_help)
+        bot.commands[func.__name__] = cmd_info
+        for a in aliases:
+            bot.commands[a] = cmd_info
+        return wrapper
     return decorator
 
 

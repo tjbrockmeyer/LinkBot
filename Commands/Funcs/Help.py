@@ -2,11 +2,16 @@ from Commands.CmdHelper import *
 import discord
 
 
-@command
+@command(
+    ['{c} [here] [command]'],
+    'Pastes help into chat.',
+    [
+        ("{c} here", "Writes the help panel to the channel you asked for it in."),
+        ("{c} quote", "Gets specific help for the 'quote' command."),
+        ("{c} here quote", "Writes that specific help to the channel you asked for it in.")
+    ]
+)
 async def help(cmd: Command):
-    # Prevents Circular dependency.
-    from Commands.CommandInfo import CommandInfo
-
     help_header = '\n' \
        "Argument syntax:  `<mandatory> [optional]`\n" \
        "Command prefix: '{prefix}'\n" \
@@ -27,11 +32,11 @@ async def help(cmd: Command):
     if helpcmd is not None:
 
         # Check for bad command.
-        if not CommandInfo.is_command(helpcmd):
+        if helpcmd not in bot.commands:
             cmd.on_syntax_error(helpcmd + ' is not a valid command.')
             return
 
-        cmdInfo = CommandInfo.get_command_info(helpcmd)
+        cmdInfo = bot.commands[helpcmd]
         embed = discord.Embed(title="**__" + cmdInfo.command + "__**",
                               color=discord.Color(0x127430),
                               description=cmdInfo.description)
@@ -43,7 +48,7 @@ async def help(cmd: Command):
         embed = discord.Embed(title="__General Command Help__",
                               color=discord.Color(0x127430),
                               description=help_header)
-        for x in CommandInfo.enumerate_commands_abc():
+        for x in sorted(list(set([y for y in bot.commands.values() if y.show_in_help])), key=lambda z: z.command):
             x.embed_syntax(embed, mk_down='`', title_mk_down='__', sep='\n', inline=True)
         bot.send_message(cmd.author if not here else cmd.channel, embed=embed)
 

@@ -1,12 +1,37 @@
+
 from Commands.CmdHelper import *
 from random import Random
 
 
+class Deck:
+    def __init__(self):
+        self.original_deck = []
+        self.deck = []
+
+
+decks = {}
+
+
+@command(
+    ["{c} status", "{c} setup preset <preset>", "{c} setup (clear|none)",
+    "{c} setup add <list of cards>", "{c} setup custom <list of cards>",
+    "{c} shuffle", "{c} draw [public]"],
+    "Create a deck of cards and draw from it.",
+    [
+        ("{c} status", "Show how many cards were in the deck at the start, and how many there are now."),
+        ("{c} setup preset standard", "Setup a deck with the standard 52 cards and no jokers."),
+        ("{c} setup clear", "Throw away all cards in the deck."),
+        ("{c} setup custom 1 2 3 4 a b c d", "Create a new deck with the cards being 1, 2, 3, 4, a, b, c, and d."),
+        ("{c} setup add 5 6 e f", "Adds 5, 6, e, and f to the currently setup deck."),
+        ("{c} shuffle", "Shuffle the current deck."),
+        ("{c} draw public", "One card is removed from the deck and is shown in the channel chat."),
+        ("{c} draw", "One card is removed from the deck, but public was not specified, so it is shown to you in a DM.")
+    ]
+)
 @restrict(SERVER_ONLY)
 @require_args(1)
-@command
 async def deck(cmd: Command):
-    session_obj = bot.session_objects[cmd.guild]
+    session_obj = decks.get(cmd.guild)
     subcmd = cmd.args[0].lower()
     cmd.shiftargs()
     if subcmd == "setup":
@@ -78,3 +103,10 @@ def deck_shuffle(cmd, session_obj):
         session_obj.deck[i] = session_obj.deck[j]
         session_obj.deck[j] = temp
     bot.send_message(cmd.channel, "Deck shuffled.")
+
+
+@on_event('ready')
+async def build_decks():
+    global decks
+    decks = {g: Deck() for g in bot.client.guilds}
+

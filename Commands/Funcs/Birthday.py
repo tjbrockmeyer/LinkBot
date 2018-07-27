@@ -3,9 +3,18 @@ from datetime import datetime
 from discord.utils import get as get_channel
 
 
+@command(
+    ["{c} list", "{c} set <name> <mm/dd>", "{c} remove <name>"],
+    "Set, remove, or list the registered birthdays from the database.",
+    [
+        ("{c} set xCoDGoDx 04/20", "This will set xCoDGoDx's birthday as April 20th."),
+        ("{c} list", "will list all birthdays that are registered for this server."),
+        ("{c} remove xCoDGoDx", "will remove xCoDGoDx's birthday from the system.")
+    ],
+    aliases=['bday']
+)
 @restrict(SERVER_ONLY)
 @require_args(1)
-@command
 async def birthday(cmd: Command):
     # create dict for server if it doesn't exist.
     if cmd.guild.id not in bot.data:
@@ -93,7 +102,6 @@ async def birthday_set(cmd):
     # set the birthday for the server and person.
     bot.data[cmd.guild.id]['birthdays'][bdayperson] = bday.strftime("%m/%d")
     bot.send_message(cmd.channel, "Set birthday of {} to {}.".format(bdayperson, bday.strftime("%B %d")))
-    bot.save_data()
 
 
 @restrict(ADMIN_ONLY)

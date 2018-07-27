@@ -9,6 +9,7 @@ from Commands.Funcs.Migrate import migrate
 from Commands.Funcs.Pause import pause
 from Commands.Funcs.Play import play
 from Commands.Funcs.Quote import quote
+from Commands.Funcs.Remind import remind
 from Commands.Funcs.Suggest import suggest
 from Commands.Funcs.Youtube import youtube
 from Commands.Funcs.Deck import deck

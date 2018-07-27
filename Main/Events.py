@@ -1,5 +1,5 @@
 import logging
-import discord
+import asyncio
 from Main.LinkBot import bot, LinkBotError
 from Commands.Command import Command
 from functools import wraps
@@ -39,7 +39,6 @@ async def on_ready():
     if bot.owner is None:
         raise LinkBotError("Bot owner could not be found in any servers that the bot is a part of.")
     logging.info('Prefix: ' + "'" + bot.prefix + "'")
-    bot.build_session_objects()
     if bot.debug:
         await bot.set_game("Debug")
         logging.info('Currently running in DEBUG mode. Edit source with DEBUG = False to deactivate.')
@@ -57,16 +56,16 @@ async def on_member_join(member):
 # gets a message, splits it into (command, argstr), then starts the command on a new thread.
 @bot.client.event
 async def on_message(message):
-    if bot.isReadingCommands and message.author.id != bot.client.user.id:
+    if message.author.id != bot.client.user.id:
         logging.info("Received a message from " + message.author.name)
-
         cmd = Command(message)
 
         # if the message has the prefix or the channel is a DM, then the message is targeted at the bot.
         if cmd.has_prefix or cmd.is_dm:
             if not bot.paused or (bot.paused and cmd.command.lower() == 'unpause'):
                 if cmd.is_valid:
-                    await cmd.run()
+                    future = asyncio.ensure_future(cmd.run())
+                    result = await future
                 else:
                     bot.send_message(message.channel, '"{}" is not a valid command.'.format(cmd.command))
 

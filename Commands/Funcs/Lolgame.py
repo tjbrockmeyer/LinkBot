@@ -3,9 +3,19 @@ from Main.Funcs import format_as_column
 from RiotAPI import *
 
 
+@command(
+    ["{c} <player> [region]"],
+    "Sends info to the channel about `summoner`'s current League of Legends game.",
+    [
+        ("{c} The Booty Toucher",
+         "Looks up and posts information in the chat about The Booty Toucher's league of legends game."),
+        ("{c} thebootytoucher", "Summoner names are not case sensitive, nor are the spaces mandatory."),
+        ("{c} thebootytoucher, kr",
+         "Will look on the Korean servers for the player's game. You can specify any region, but you'll need to know the region ID yourself.")
+    ]
+)
 @restrict(0)
 @require_args(1)
-@command
 async def lolgame(cmd: Command):
     args = cmd.argstr.split(',')
 
