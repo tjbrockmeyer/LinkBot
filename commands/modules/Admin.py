@@ -41,9 +41,9 @@ async def admin_list(cmd):
     # get the admin names from their IDs, save them to a string, then send it to the channel.
     l = bot.data[cmd.guild.id]['admins']
     if len(l) == 1:
-        admins = "Admin: " + str(bot.client.get_user(l[0]))
+        admins = "Admin: " + str(client.get_user(l[0]))
     else:
-        admins = "Admins: " + reduce(lambda x, y: "{}, {}".format(x, bot.client.get_user(y)), l[1:], str(bot.client.get_user(l[0])))
+        admins = "Admins: " + reduce(lambda x, y: "{}, {}".format(x, client.get_user(y)), l[1:], str(client.get_user(l[0])))
     await cmd.channel.send(admins)
 
 

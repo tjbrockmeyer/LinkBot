@@ -117,7 +117,7 @@ async def birthday_remove(cmd):
 @on_event('ready')
 async def birthday_check():
     today = datetime.now()
-    for server in bot.client.guilds:
+    for server in client.guilds:
         if server.id in bot.data and 'birthdays' in bot.data[server.id]:
             for p, b in bot.data[server.id]['birthdays'].items():
                 bday = datetime.strptime(b, "%m/%d")

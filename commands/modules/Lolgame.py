@@ -1,6 +1,6 @@
 from commands.cmd_utils import *
 from RiotAPI import *
-from utils import format_as_column
+from utils.funcs import format_as_column
 
 
 @command(

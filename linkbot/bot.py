@@ -52,7 +52,7 @@ class LinkBot:
             self.data[int(key)] = val
             del self.data[key]
 
-        options = IniIO(CONFIG_FILE)
+        options = IniIO.load(CONFIG_FILE)
         self.owner_id = options.get_int('ownerDiscordId', default=None)
         self.owner = None
         self.token = options.get_str('botToken', default=None)
@@ -178,6 +178,6 @@ async def on_error(event_name, *args, **kwargs):
 
 cmd_dir = 'commands/modules/'
 for file in [cmd_dir + f for f in os.listdir(cmd_dir)]:
-    if not file.endswith('__init__.py'):
+    if os.path.isfile(file) and not file.endswith('__init__.py'):
         package = file.replace('/', '.')[:-3]
         _ = import_module(package)

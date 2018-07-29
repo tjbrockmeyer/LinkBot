@@ -103,5 +103,5 @@ async def deck_shuffle(cmd, session_obj):
 @on_event('ready')
 async def build_decks():
     global decks
-    decks = {g: Deck() for g in bot.client.guilds}
+    decks = {g: Deck() for g in client.guilds}
 

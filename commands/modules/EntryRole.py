@@ -41,7 +41,7 @@ async def entryrole(cmd: Command):
 
 @on_event('ready')
 async def entryrole_check_all():
-    for guild in bot.client.guilds:
+    for guild in client.guilds:
         if guild.id in bot.data and 'entryrole' in bot.data[guild.id]:
             role = _get_entryrole(guild)
             for member in guild.members:
@@ -53,7 +53,7 @@ async def entryrole_check_all():
 async def entryrole_check_one(member):
     if 'entryrole' in bot.data[member.guild.id]:
         role = _get_entryrole(member.guild)
-        await bot.client.add_roles(member, role)
+        await client.add_roles(member, role)
 
 
 def _get_entryrole(guild):

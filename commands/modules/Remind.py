@@ -20,7 +20,7 @@ class Reminder:
     @staticmethod
     def from_json(data):
         return Reminder(
-            bot.client.get_user(data['target']),
+            client.get_user(data['target']),
             datetime.strptime(data['time'], Reminder.datefmt),
             data['reason'])
 
@@ -91,7 +91,7 @@ async def remind(cmd: Command):
     reminder = Reminder(cmd.author, remind_at_time, reason)
 
     if delay < 61:
-        bot.client.loop.create_task(remind_soon(reminder))
+        client.loop.create_task(remind_soon(reminder))
     else:
         reminders.append(reminder)
         _save_reminders()
@@ -114,13 +114,13 @@ async def remind(cmd: Command):
 @background_task
 async def remind_loop():
     min_time = timedelta(seconds=61)
-    while not bot.client.is_closed():
+    while not client.is_closed():
         now = datetime.now()
         remove = []
         for (index, r) in enumerate(reminders):
             if r.time - now < min_time:
                 remove.append(index)
-                bot.client.loop.create_task(remind_soon(r))
+                client.loop.create_task(remind_soon(r))
         if len(remove) > 0:
             for r in reversed(remove):
                 del reminders[r]

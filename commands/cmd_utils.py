@@ -71,10 +71,10 @@ def update_database(func):
 def background_task(func):
     @wraps(func)
     async def wrapper():
-        await bot.client.wait_until_ready()
+        await client.wait_until_ready()
         await func()
 
-    bot.client.loop.create_task(wrapper())
+    client.loop.create_task(wrapper())
     return wrapper
 
 

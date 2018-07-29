@@ -19,7 +19,7 @@ async def play(cmd: Command):
     inSameChannel = False
 
     # find out if we're in the same server/channel as our inviter.
-    for voiceClient in bot.client.voice_clients:
+    for voiceClient in client.voice_clients:
         if voiceClient.server == voice.voice_channel.server:
             inSameServer = True
             vc = voiceClient
@@ -31,4 +31,4 @@ async def play(cmd: Command):
         if inSameServer:
             vc.move_to(voice.voice_channel)
         else:
-            bot.client.join_voice_channel(voice.voice_channel)
+            client.join_voice_channel(voice.voice_channel)
