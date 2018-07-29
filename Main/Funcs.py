@@ -3,18 +3,6 @@ import os
 import json
 
 
-def format_as_no_spaces(string):
-    """
-    Returns the same string, but with no spaces in it.
-
-    :param string: The string to remove spaces from.
-    :type string: str
-    :return: The string with no spaces.
-    :rtype: str
-    """
-    return ''.join(string.split())
-
-
 def format_as_column(content, column_length, alignment=-1):
     """
     Returns the append string with spaces added to create a column format.
@@ -38,15 +26,7 @@ def format_as_column(content, column_length, alignment=-1):
     return " " * add_spaces + content
 
 
-def find_user_in_servers(servers, user_id):
-    for server in servers:
-        for member in server.members:
-            if member.id == user_id:
-                return member
-    return None
-
-
-def read_config(filepath):
+def read_ini(filepath):
     options = {}
     with open(filepath, 'r') as f:
         for line in f:

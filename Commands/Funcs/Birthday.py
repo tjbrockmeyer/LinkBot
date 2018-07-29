@@ -58,7 +58,7 @@ async def birthday_list(cmd):
 
 @restrict(ADMIN_ONLY)
 @require_args(2)
-@updates_database
+@update_database
 async def birthday_set(cmd):
     bdayperson = cmd.args[0]
     bdayarg = cmd.args[1]
@@ -106,7 +106,7 @@ async def birthday_set(cmd):
 
 @restrict(ADMIN_ONLY)
 @require_args(1)
-@updates_database
+@update_database
 async def birthday_remove(cmd):
     person = cmd.args[0]
     if person not in bot.data[cmd.guild.id]['birthdays']:

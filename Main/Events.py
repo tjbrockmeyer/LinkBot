@@ -43,7 +43,7 @@ async def on_ready():
         await bot.set_game("Debug")
         logging.info('Currently running in DEBUG mode. Edit source with DEBUG = False to deactivate.')
     else:
-        await bot.set_game("{}.help".format(bot.prefix))
+        await bot.set_game("{}help".format(bot.prefix))
     logging.info('Bot is ready.')
 
 

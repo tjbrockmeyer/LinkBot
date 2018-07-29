@@ -111,7 +111,7 @@ def quote_random(cmd):
 
 @restrict(ADMIN_ONLY)
 @require_args(2)
-@updates_database
+@update_database
 def quote_add(cmd):
     q_args = cmd.argstr
     match = re.search('( -\w)', q_args)
@@ -140,7 +140,7 @@ def quote_add(cmd):
 
 @restrict(ADMIN_ONLY)
 @require_args(1)
-@updates_database
+@update_database
 def quote_remove(cmd):
     # ID type-check
     try:

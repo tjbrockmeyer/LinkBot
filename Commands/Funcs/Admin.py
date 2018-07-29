@@ -49,7 +49,7 @@ async def admin_list(cmd):
 
 
 @restrict(ADMIN_ONLY)
-@updates_database
+@update_database
 async def admin_add(cmd):
     # Check that the sender is an admin
     if not bot.is_admin(cmd.author):
@@ -82,7 +82,7 @@ async def admin_add(cmd):
 
 
 @restrict(ADMIN_ONLY)
-@updates_database
+@update_database
 async def admin_remove(cmd):
     # Check that the sender is an admin.
     if not bot.is_admin(cmd.author):

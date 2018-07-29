@@ -6,7 +6,7 @@ import time
 import os
 import sys
 from queue import Queue
-from Main.Funcs import read_config, load_json, save_json
+from Main.Funcs import read_ini, load_json, save_json
 
 import discord
 import GoogleAPI
@@ -55,7 +55,7 @@ class LinkBot:
             self.data[int(key)] = val
             del self.data[key]
 
-        options = read_config(CONFIG_FILE)
+        options = read_ini(CONFIG_FILE)
         self.owner_id = options.get('ownerDiscordId')
         self.token = options.get('botToken')
         self.client_id = options.get('botClientId')

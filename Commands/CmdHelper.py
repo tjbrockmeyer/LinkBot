@@ -63,7 +63,7 @@ def require_args(count):
     return decorator
 
 
-def updates_database(func):
+def update_database(func):
     @wraps(func)
     async def wrapper(cmd, *args, **kwargs):
         await func(cmd, *args, **kwargs)
@@ -91,14 +91,20 @@ def on_event(event_name):
     return decorator
 
 
-def command(syntax, description, examples, aliases=None, show_in_help=True):
+def command(syntax, description, examples, aliases=None, show_in_help=True, help_subcommand=True):
     aliases = aliases or []
     def decorator(func):
         @wraps(func)
-        async def wrapper(cmd, *args, **kwargs):
-            logging.info("Running command: {}".format(func.__name__))
-            await func(cmd, *args, **kwargs)
-            logging.info("Command complete: {}".format(func.__name__))
+        async def wrapper(cmd: Command, *args, **kwargs):
+            if help_subcommand and len(cmd.args) > 0 and cmd.args[0] == 'help':
+                from Commands.Funcs.Help import help
+                cmd.args = [cmd.command]
+                cmd.argstr = cmd.command
+                await help(cmd)
+            else:
+                logging.info("Running command: {}".format(func.__name__))
+                await func(cmd, *args, **kwargs)
+                logging.info("Command complete: {}".format(func.__name__))
 
         cmd_info = CommandInfo(func.__name__, wrapper, syntax, description, examples, aliases, show_in_help)
         bot.commands[func.__name__] = cmd_info
