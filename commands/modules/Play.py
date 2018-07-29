@@ -1,4 +1,4 @@
-from Commands.CmdHelper import *
+from commands.cmd_utils import *
 
 
 @command(
@@ -12,8 +12,7 @@ from Commands.CmdHelper import *
 async def play(cmd: Command):
     voice = cmd.author.voice
     if voice.voice_channel is None:
-        bot.send_message(cmd.channel, "You need to be in a voice channel.")
-        return
+        raise CommandSyntaxError( "You need to be in a voice channel.")
 
     inSameServer = False
     vc = None

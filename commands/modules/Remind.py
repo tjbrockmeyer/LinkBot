@@ -1,9 +1,10 @@
 
-from Commands.CmdHelper import *
-from datetime import datetime, timedelta
-from Main.Funcs import load_json, save_json
-from Main.LinkBot import DATA_FOLDER
 import re
+from datetime import datetime, timedelta
+
+from commands.cmd_utils import *
+from linkbot.bot import DATA_FOLDER
+from utils.funcs import load_json, save_json
 
 
 class Reminder:
@@ -50,7 +51,7 @@ async def remind(cmd: Command):
             for r in reversed(remove):
                 del reminders[r]
             _save_reminders()
-        bot.send_message(cmd.channel, "All of your reminders have been deleted (if there were any).")
+        await send_success(cmd.message)
         return
 
     try:
@@ -61,8 +62,7 @@ async def remind(cmd: Command):
             cmd.shiftargs()
             while True:
                 if len(cmd.args) == 0:
-                    cmd.on_syntax_error('Tell me when to remind you with `in #d#h#m#s`.')
-                    return
+                    raise CommandSyntaxError(cmd, 'Tell me when to remind you with `in #d#h#m#s`.')
                 elif cmd.args[0] == 'in' and _delay_regex.match(cmd.argstr[3:].strip()):
                     break
                 reason += cmd.args[0] + ' '
@@ -71,8 +71,7 @@ async def remind(cmd: Command):
         if cmd.args[0] == 'in':
             cmd.shiftargs()
     except IndexError:
-        cmd.on_syntax_error('You need to specify a delay.')
-        return
+        raise CommandSyntaxError(cmd, 'You need to specify a delay.')
 
     try:
         match = _delay_regex.match(cmd.argstr)
@@ -83,11 +82,9 @@ async def remind(cmd: Command):
             seconds = match.group(4) or 0
             delay = int(seconds) + 60 * int(minutes) + 3600 * int(hours) + 86400 * int(days)
         else:
-            cmd.on_syntax_error('Delay specification is not in a valid format.')
-            return
+            raise CommandSyntaxError(cmd, 'Delay specification is not in a valid format.')
     except ValueError:
-        cmd.on_syntax_error('Days, hours, minutes and seconds can only be whole numbers.')
-        return
+        raise CommandSyntaxError(cmd, 'Days, hours, minutes and seconds can only be whole numbers.')
 
     now = datetime.now()
     remind_at_time = now + timedelta(seconds=delay)
@@ -111,7 +108,7 @@ async def remind(cmd: Command):
         outstring += ' about "{}".'.format(reason)
     else:
         outstring += '.'
-    bot.send_message(cmd.channel, outstring)
+    await cmd.channel.send(outstring)
 
 
 @background_task
@@ -141,9 +138,9 @@ async def remind_soon(reminder):
     delta_time = (reminder.time - datetime.now()).total_seconds()
     await asyncio.sleep(delta_time)
     if reminder.reason == '':
-        bot.send_message(reminder.target, 'This is your reminder {}!'.format(reminder.target.name))
+        await reminder.target.send('This is your reminder {}!'.format(reminder.target.name))
     else:
-        bot.send_message(reminder.target, 'I\'m reminding you about "{}", {}!'.format(reminder.reason, reminder.target.name))
+        await reminder.target.send('I\'m reminding you about "{}", {}!'.format(reminder.reason, reminder.target.name))
 
 
 def _save_reminders():

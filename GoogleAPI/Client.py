@@ -9,7 +9,8 @@ CUSTOM_SEARCH_ENGINE_ID = '004172756766271708899:qagcvrjb2kc'
 
 
 class GoogleAPIError(Exception):
-    def __init__(self, request):
+    def __init__(self, request, message='API Error'):
+        Exception.__init__(self, message)
         self.url = request.url
         self.json = request.json
         self.status_code = request.status_code
@@ -52,14 +53,12 @@ class Client:
             'maxResults': str(max_results),
             'key': self.api_key
         })
-        if request.status_code != 200:
-            raise GoogleAPIError(request)
         if 'items' not in request.json():
             return []
         try:
             return [Video(v) for v in request.json()['items']]
         except KeyError as e:
-            raise KeyError("Could not find {} in json at {}".format(e, request.url))
+            raise GoogleAPIError(request, "Could not find {} in json.".format(e))
 
 
     @staticmethod
@@ -74,11 +73,9 @@ class Client:
             'searchType': 'image',
             'key'       : self.api_key
         })
-        if request.status_code != 200:
-            raise  GoogleAPIError(request)
         if 'items' not in request.json():
             return []
         try:
             return [Image(i) for i in request.json()['items']]
         except KeyError as e:
-            raise KeyError("Could not find {} in json at {}".format(e, request.url))
+            raise GoogleAPIError(request, "Could not find {} in json.".format(e))

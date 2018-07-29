@@ -1,4 +1,4 @@
-from Commands.CmdHelper import *
+from commands.cmd_utils import *
 from GoogleAPI import GoogleAPIError
 
 
@@ -17,14 +17,12 @@ async def youtube(cmd: Command):
     try:
         video_list = bot.googleClient.get_video_search_results(cmd.argstr, 1)
     except GoogleAPIError as e:
-        bot.bot.send_error_message("Google API Error: " + e.json)
-        bot.send_message(cmd.channel, "An error occurred. The quota limit may have been reached.")
-        return
+        raise DeveloperError(
+            cmd, "Google API Error: \n  Message: {}\n  Status: {}\n  From URL: {}".format(e, e.status_code, e.url),
+            public_reason="An error occurred. The quota limit may have been reached.")
 
     # send link to first search result
     if len(video_list) == 0:
-        bot.send_message(cmd.channel, "No results were found.")
-    else:
-        bot.send_message(cmd.channel, video_list[0].url)
-        logging.info("Sent YouTube video link.")
+        raise CommandError(cmd, "No results were found.")
+    await cmd.channel.send(video_list[0].url)
 

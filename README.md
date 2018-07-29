@@ -24,10 +24,9 @@ It is in the Command Data dictionary that aliases for commands can be defined. S
 - Create a script for your command at `Commands/Funcs/<yourcommand>.py`.
 - Import the helper files: `from Commands.CmdHelper import *`.
 - Create a function for your command: `async def <yourcommand>():`.
-- Import your command into `Commands/Funcs/__init__.py` with `from Commands.Funcs.<YourCommand> import <yourcommand>`
+- Decorate your function with `@command()` and fill out the required parameters.
 - Write your script, using any of the helper functions and decorators that are included from `Commands.CmdHelper`.
 - Possibly add functionality to the main bot files `Main/*` that is required for your command.
-- Add an entry into COMMANDS in `Commands/Data.py`, following the format of other commands that are in there.
 - That's it! 
   - From here, your command should be callable by addressing the bot using the prefix specified in your config.
   - Your command should also be available via the `help` command.

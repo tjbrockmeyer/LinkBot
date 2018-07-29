@@ -1,7 +1,7 @@
 import asyncio
 import time
 import discord
-from Commands.CmdHelper import *
+from commands.cmd_utils import *
 
 
 @command(
@@ -12,7 +12,7 @@ from Commands.CmdHelper import *
         ("{c} bk lounge, the potion shop", "It's not case sensitive, so this would still work with the same effect.")
     ]
 )
-@restrict(SERVER_ONLY)
+@restrict(SERVER_ONLY | ADMIN_ONLY)
 @require_args(2)
 async def migrate(cmd: Command):
     cmd.args = cmd.argstr.split(',')
@@ -37,15 +37,14 @@ async def migrate(cmd: Command):
     # Report that the loop did not break.
     else:
         if channel1 is None and channel2 is None:
-            cmd.on_syntax_error("Neither '{}' nor '{}' are channels in this server.".format(*channels))
+            raise CommandSyntaxError(cmd, "Neither '{}' nor '{}' are channels in this server.".format(*channels))
         elif channel1 is None:
-            cmd.on_syntax_error(channels[0] + " is not a channel in this server.")
+            raise CommandSyntaxError(cmd, channels[0] + " is not a channel in this server.")
         elif channel2 is None:
-            cmd.on_syntax_error(channels[1] + " is not a channel in this server.")
-        return
+            raise CommandSyntaxError(cmd, channels[1] + " is not a channel in this server.")
 
     # move each member from the first channel to the second channel.
-    for member in channel.voice_members:
-        await bot.client.move_member(member, channel2)
-    bot.send_message(cmd.channel, 'Members in {0} have been migrated to {1}.'.format(channel1.name, channel2.name))
+    for member in channel1.voice_members:
+        await member.move(channel2)
+    await send_success(cmd.message)
     time.sleep(3)

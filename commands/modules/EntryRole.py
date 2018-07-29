@@ -1,4 +1,4 @@
-from Commands.CmdHelper import *
+from commands.cmd_utils import *
 
 
 MY_SERVER_ID = 153368514390917120
@@ -17,29 +17,26 @@ ENTRY_LEVEL_ROLE_ID = 215608168519172096
 @update_database
 async def entryrole(cmd: Command):
     if len(cmd.args) == 0:
-        if 'entryrole' in bot.data[cmd.guild.id]:
-            role = discord.utils.get(cmd.guild.roles, id=bot.data[cmd.guild.id]['entryrole'])
-            bot.send_message(cmd.channel, 'Entry level role: `{}`'.format(role))
-        else:
-            bot.send_message(cmd.channel, 'There is not an entry level role set for this server.')
-        return
+        if 'entryrole' not in bot.data[cmd.guild.id]:
+            raise CommandError(cmd, 'There is not an entry level role set for this server.')
 
-    if cmd.args[0] == 'set':
+        role = discord.utils.get(cmd.guild.roles, id=bot.data[cmd.guild.id]['entryrole'])
+        await cmd.channel.send('Entry level role: `{}`'.format(role))
+
+    elif cmd.args[0] == 'set':
         mentions = cmd.message.role_mentions
         if len(mentions) == 0:
-            cmd.on_syntax_error("You must mention a role in the server to be the entry level role.", 'entryrole_set')
-            return
+            raise CommandSyntaxError(cmd, "You must at-mention a role in the server to be the entry level role.")
         role = cmd.message.role_mentions[0]
         bot.data[cmd.guild.id]['entryrole'] = role.id
-        await cmd.message.add_reaction(emoji='✅')
+        await send_success(cmd.message)
 
     elif cmd.args[0] == 'remove':
         if 'entryrole' not in bot.data[cmd.guild.id]:
-            bot.send_message(cmd.channel, "There isn't an entry role to remove.")
-        else:
-            del bot.data[cmd.guild.id]['entryrole']
+            raise CommandError(cmd, "There isn't an entry role to remove.")
+        del bot.data[cmd.guild.id]['entryrole']
     else:
-        cmd.on_syntax_error("Invalid subcommand.")
+        raise CommandSyntaxError(cmd, "Invalid subcommand.")
 
 
 @on_event('ready')

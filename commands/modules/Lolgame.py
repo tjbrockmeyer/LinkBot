@@ -1,6 +1,6 @@
-from Commands.CmdHelper import *
-from Main.Funcs import format_as_column
+from commands.cmd_utils import *
 from RiotAPI import *
+from utils import format_as_column
 
 
 @command(
@@ -39,32 +39,25 @@ async def lolgame(cmd: Command):
         summoner = bot.riotClient.get_summoner(arg_summoner)
     except RiotAPIError as e:
         if e.status_code == 404:
-            bot.send_message(cmd.channel, "{} does not exist on the {} server.".format(arg_summoner, bot.riotClient.region))
-        else:
-            _notify_of_unknown_error(cmd.channel, e)
-        return
+            raise CommandError(cmd, "{} does not exist on the {} server.".format(arg_summoner, bot.riotClient.region))
+        raise _deverror(cmd, e)
 
     # get summoner's game
     try:
         game = bot.riotClient.get_active_game(summoner.id)
     except RiotAPIError as e:
         if e.status_code == 404:
-            bot.send_message(cmd.channel, "{} is not in a game.".format(summoner.name))
-        else:
-            _notify_of_unknown_error(cmd.channel, e)
-        return
+            raise CommandError(cmd, "{} is not in a game.".format(summoner.name))
+        raise _deverror(cmd, e)
 
     # begin organizing data
-    bot.send_message(cmd.channel, "Looking up {}'s game on the {} server...".format(summoner.name, bot.riotClient.region.upper()))
-    await asyncio.sleep(0.5)
-
+    await send_success(cmd.message)
     async with cmd.channel.typing():
         # get full list of champions in league of legends
         try:
             champions = bot.riotClient.get_champion_static_all()
         except RiotAPIError as e:
-            _notify_of_unknown_error(cmd.channel, e)
-            return
+            raise _deverror(cmd, e)
 
         # list for both teams and the output string.
         blueteam = []
@@ -90,7 +83,7 @@ async def lolgame(cmd: Command):
                             p.games = entry.wins + entry.losses
                             p.winrate = "{:0.2f}".format(entry.wins / float(p.games) if p.games != 0 else entry.wins)
                 except RiotAPIError as e:
-                    _notify_of_unknown_error(cmd.channel, e)
+                    raise _deverror(cmd.channel, e)
 
         # begin formatting output
         gamestring = '```League of Legends Game for {}:\n'.format(summoner.name) + \
@@ -117,7 +110,7 @@ async def lolgame(cmd: Command):
             gamestring += _format_as_lolplayer_output(p)
         gamestring += '```'
 
-        bot.send_message(cmd.channel, gamestring)
+        await cmd.channel.send(gamestring)
 
 
 class PlayerOutput:
@@ -153,7 +146,7 @@ def _format_as_lolplayer_output(p):
     return string
 
 
-def _notify_of_unknown_error(channel, error):
-    bot.send_error_message('Error code: ' + str(error.status_code) + '\n' + error.url + '\n' + error.message)
-    bot.send_message(channel, "An error occurred. Aborting the lookup.")
+def _deverror(cmd, e):
+    raise DeveloperError(
+        cmd, "Riot API Error: \n  Message: {}\n  Status: {}\n  URL: {}".format(e, e.status_code, e.message))
 

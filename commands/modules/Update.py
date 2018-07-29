@@ -1,5 +1,5 @@
-from Commands.CmdHelper import *
-from Commands.Funcs import logout
+from commands.cmd_utils import *
+from commands.modules.Logout import logout
 import threading
 import os
 import git
@@ -18,7 +18,7 @@ import git
 async def update(cmd: Command):
     for thread in threading.enumerate():
         if thread is not threading.current_thread() and (thread.name == 'cmd_update' or thread.name == 'cmd_upgrade'):
-            bot.send_message(cmd.channel, "Update is already in progress.")
+            await cmd.channel.send("Update is already in progress.")
             return
 
     logging.info("Pulling to: " + os.getcwd())
@@ -33,10 +33,9 @@ async def update(cmd: Command):
             g.reset('--hard', 'origin/master')
             g.pull('origin', 'master')
         else:
-            bot.send_message(cmd.channel,
-                        "There are unpushed changes in the local repository. Use 'update force' to force an overwrite.")
-            return
+            raise CommandError(
+                cmd, "There are unpushed changes in the local repository. Use 'update force' to force an overwrite.")
     logging.info("Pull complete.")
-    bot.send_message(cmd.channel, "Update complete. Restarting...")
+    await cmd.channel.send("Update complete. Restarting...")
     bot.restart = True
     logout(cmd)

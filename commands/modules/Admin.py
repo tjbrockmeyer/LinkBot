@@ -1,4 +1,4 @@
-from Commands.CmdHelper import *
+from commands.cmd_utils import *
 from functools import reduce
 
 
@@ -30,14 +30,13 @@ async def admin(cmd: Command):
     elif subcmd == "remove":
         await admin_remove(cmd)
     else:
-        bot.send_message(cmd.channel, '{} is not a valid argument.'.format(subcmd))
+        raise CommandSyntaxError(cmd, '{} is not a valid subcommand.'.format(subcmd))
 
 
 async def admin_list(cmd):
     # Check for existing admins
     if len(bot.data[cmd.guild.id]['admins']) == 0:
-        bot.send_message(cmd.channel, 'There are no admins on this server.')
-        return
+        raise CommandError(cmd, 'There are no admins on this server.')
 
     # get the admin names from their IDs, save them to a string, then send it to the channel.
     l = bot.data[cmd.guild.id]['admins']
@@ -45,17 +44,12 @@ async def admin_list(cmd):
         admins = "Admin: " + str(bot.client.get_user(l[0]))
     else:
         admins = "Admins: " + reduce(lambda x, y: "{}, {}".format(x, bot.client.get_user(y)), l[1:], str(bot.client.get_user(l[0])))
-    bot.send_message(cmd.channel, admins)
+    await cmd.channel.send(admins)
 
 
 @restrict(ADMIN_ONLY)
 @update_database
 async def admin_add(cmd):
-    # Check that the sender is an admin
-    if not bot.is_admin(cmd.author):
-        bot.send_message(cmd.channel, "You must be an admin to use this command.")
-        return
-
     # the output cmd at the end.
     msg = ''
 
@@ -76,19 +70,12 @@ async def admin_add(cmd):
                 else:
                     bot.data[cmd.guild.id]['admins'].append(member.id)
                     msg += "Added " + member.display_name + " as an admin.\n"
-    # output
-    bot.save_data()
-    bot.send_message(cmd.channel, msg)
+    await cmd.channel.send(msg)
 
 
 @restrict(ADMIN_ONLY)
 @update_database
 async def admin_remove(cmd):
-    # Check that the sender is an admin.
-    if not bot.is_admin(cmd.author):
-        bot.send_message(cmd.channel, "You must be an admin to use this command.")
-        return
-
     # the output message at the end.
     msg = ''
 
@@ -109,6 +96,4 @@ async def admin_remove(cmd):
                 else:
                     bot.data[cmd.guild.id]['admins'].remove(member.id)
                     msg += "Removed " + member.display_name + " from the admin list.\n"
-    # output
-    bot.save_data()
-    bot.send_message(cmd.channel, msg)
+    await cmd.channel.send(msg)

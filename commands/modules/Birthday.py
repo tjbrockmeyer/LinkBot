@@ -1,4 +1,4 @@
-from Commands.CmdHelper import *
+from commands.cmd_utils import *
 from datetime import datetime
 from discord.utils import get as get_channel
 
@@ -31,7 +31,7 @@ async def birthday(cmd: Command):
     elif subcmd == "list":
         birthday_list(cmd)
     else:
-        cmd.on_syntax_error("Invalid subcommand.")
+        raise CommandSyntaxError(cmd, "Invalid subcommand.")
 
 
 async def birthday_list(cmd):
@@ -51,9 +51,8 @@ async def birthday_list(cmd):
         send_msg += p + ": " + b.strftime("%B %d") + "\n"
 
     if send_msg == "":
-        bot.send_message(cmd.channel, "I don't know anyone's birthdays yet.")
-    else:
-        bot.send_message(cmd.channel, send_msg)
+        raise CommandError(cmd, "I don't know anyone's birthdays yet.")
+    await cmd.channel.send(send_msg)
 
 
 @restrict(ADMIN_ONLY)
@@ -95,13 +94,12 @@ async def birthday_set(cmd):
                     except (ValueError, IndexError):
 
                         # Send error: Invalid format.
-                        cmd.on_syntax_error('To set a birthday, it must be in the '
-                                        'format of TB 09/02, TB 09-02, TB Sep 02 or TB September 02.')
-                        return
+                        raise CommandSyntaxError(
+                            cmd, 'Birthdays must be in the format of TB 09/02, TB 09-02, TB Sep 02 or TB September 02.')
 
     # set the birthday for the server and person.
     bot.data[cmd.guild.id]['birthdays'][bdayperson] = bday.strftime("%m/%d")
-    bot.send_message(cmd.channel, "Set birthday of {} to {}.".format(bdayperson, bday.strftime("%B %d")))
+    await send_success(cmd.message)
 
 
 @restrict(ADMIN_ONLY)
@@ -110,10 +108,9 @@ async def birthday_set(cmd):
 async def birthday_remove(cmd):
     person = cmd.args[0]
     if person not in bot.data[cmd.guild.id]['birthdays']:
-        bot.send_message(cmd.channel, "{} doesn't have a registered birthday.".format(person))
-        return
+        raise CommandError(cmd, "{} doesn't have a registered birthday.".format(person))
     bot.data[cmd.guild.id]['birthdays'].pop(person)
-    bot.send_message(cmd.channel, "{}'s birthday successfully removed.".format(person))
+    await send_success(cmd.message)
     bot.save_data()
 
 

@@ -1,4 +1,4 @@
-from Commands.CmdHelper import *
+from commands.cmd_utils import *
 import discord
 
 
@@ -33,15 +33,14 @@ async def help(cmd: Command):
 
         # Check for bad command.
         if helpcmd not in bot.commands:
-            cmd.on_syntax_error(helpcmd + ' is not a valid command.')
-            return
+            raise CommandSyntaxError(cmd, helpcmd + ' is not a valid command.')
 
         cmdInfo = bot.commands[helpcmd]
         embed = discord.Embed(title="**__" + cmdInfo.command + "__**",
                               color=discord.Color(0x127430),
                               description=cmdInfo.description)
-        cmdInfo.embed_examples(embed, cmd_as_code=False)
-        bot.send_message(cmd.author if not here else cmd.channel, embed=embed)
+        cmdInfo.embed_examples(embed, bot.prefix, cmd_as_code=False)
+        await cmd.author if not here else cmd.channel.send(embed=embed)
 
     # if "help [here]"
     else:
@@ -49,6 +48,6 @@ async def help(cmd: Command):
                               color=discord.Color(0x127430),
                               description=help_header)
         for x in sorted(list(set([y for y in bot.commands.values() if y.show_in_help])), key=lambda z: z.command):
-            x.embed_syntax(embed, mk_down='`', title_mk_down='__', sep='\n', inline=True)
-        bot.send_message(cmd.author if not here else cmd.channel, embed=embed)
+            x.embed_syntax(embed, bot.prefix, mk_down='`', title_mk_down='__', sep='\n', inline=True)
+        await cmd.author if not here else cmd.channel.send(embed=embed)
 

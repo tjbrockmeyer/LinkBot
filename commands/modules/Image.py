@@ -1,4 +1,4 @@
-from Commands.CmdHelper import *
+from commands.cmd_utils import *
 from GoogleAPI import GoogleAPIError
 
 
@@ -16,13 +16,11 @@ async def image(cmd: Command):
     try:
         image_list = bot.googleClient.get_image_search_results(cmd.argstr)
     except GoogleAPIError as e:
-        bot.send_error_message("Google API Error: \n" + e.url)
-        bot.send_message(cmd.channel, "An error occurred. The quota limit may have been reached.")
-        return
+        raise DeveloperError(
+            cmd, "Google API Error: \n  Message: {}\n  Status: {}\n  From URL: {}".format(e, e.status_code, e.url),
+            public_reason="An error occurred. The quota limit may have been reached.")
 
     # send link to first search result
     if len(image_list) == 0:
-        bot.send_message(cmd.channel, "No results were found.")
-    else:
-        bot.send_message(cmd.channel, image_list[0].url)
-    logging.info("Sent Google image link.")
+        raise CommandError(cmd, "No results were found.")
+    await cmd.channel.send(image_list[0].url)

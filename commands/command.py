@@ -1,4 +1,3 @@
-from Main.LinkBot import bot
 import discord
 
 
@@ -20,14 +19,14 @@ class Command:
     :isValid: (bool) A bool stating whether this is a valid command or not.
     """
 
-    def __init__(self, message: discord.Message):
+    def __init__(self, bot, message: discord.Message):
         """
         Parse a message into an attempted command.
 
         :param message: The message to parse.
         :type message: discord.Message
         """
-        from Commands.CommandInfo import CommandInfo
+        self.bot_prefix = bot.prefix
 
         # Get channel and server
         self.channel = message.channel
@@ -49,12 +48,12 @@ class Command:
 
         # Get command.
         try:
-            self.command = self.argstr[:self.argstr.index(' ')]
+            self.command_arg = self.argstr[:self.argstr.index(' ')]
         except ValueError:
-            self.command = self.argstr
+            self.command_arg = self.argstr
 
         # Get args
-        self.argstr = self.argstr[len(self.command):].lstrip()
+        self.argstr = self.argstr[len(self.command_arg):].lstrip()
         tempargs = self.argstr.split(' ')
         self.args = []
         for x in tempargs:
@@ -63,12 +62,8 @@ class Command:
                 self.args.append(x)
 
         # Get info
-        self.info = bot.commands.get(self.command.lower())
+        self.info = bot.commands.get(self.command_arg.lower())
         self.is_valid = self.info is not None
-
-
-    def on_syntax_error(self, info='', cmd_name=None):
-        bot.send_message(self.channel, bot.on_syntax_error(self.command, info, cmd_name))
 
     async def run(self):
         await self.info.func(self)
