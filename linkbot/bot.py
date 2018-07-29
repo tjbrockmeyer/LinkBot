@@ -9,6 +9,7 @@ from importlib import import_module
 
 from utils.funcs import load_json, create_config
 from utils.IniIO import IniIO
+from utils import emoji
 from linkbot.errors import *
 from commands.command import Command
 import GoogleAPI
@@ -154,15 +155,15 @@ async def on_error(event_name, *args, **kwargs):
     elif etype is CommandSyntaxError:
         subcmd = e.cmd.message.content[:e.cmd.message.content.find(e.cmd.argstr)].strip()
         await ch.send("{} {} Try `{}help {}` for help on how to use `{}`."
-                      .format('WARN |', e, bot.prefix, e.cmd.command_arg, subcmd))
+                      .format(emoji.warning, e, bot.prefix, e.cmd.command_arg, subcmd))
     elif etype is CommandPermissionError:
-        await ch.send("{} {}".format('NOENTRY |', e))
+        await ch.send("{} {}".format(emoji.no_entry, e))
     elif etype is DeveloperError:
         fmt_exc = traceback.format_exception(etype, e, tb)
-        await ch.send("{} {}".format('EXCLAIM |', e.public_reason))
+        await ch.send("{} {}".format(emoji.exclamation, e.public_reason))
         await bot.owner.send("A DeveloperError has occurred:\n{}\n```{}```".format(e, fmt_exc))
     elif etype is CommandError:
-        await ch.send("{} {}".format('X |', e))
+        await ch.send("{} {}".format(emoji.x, e))
     elif etype is LinkBotError:
         fmt_exc = traceback.format_exception(etype, e, tb)
         await bot.owner.send("A generic LinkBot has occurred:\n{}\n```{}```".format(e, fmt_exc))

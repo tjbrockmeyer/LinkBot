@@ -1,5 +1,6 @@
 
 from linkbot.bot import bot
+from utils import emoji
 
 
 def is_admin(member):
@@ -30,4 +31,4 @@ def is_owner(user):
 
 
 async def send_success(message):
-    await message.add_reaction(emoji='✅')
+    await message.add_reaction(emoji=emoji.checkmark)
