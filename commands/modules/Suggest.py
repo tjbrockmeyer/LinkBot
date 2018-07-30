@@ -11,7 +11,6 @@ from linkbot.bot import SUGGESTION_FILE
 )
 @require_args(1)
 async def suggest(cmd: Command):
-    with bot.lock:
-        with open(SUGGESTION_FILE, 'a') as suggestion_file:
-            suggestion_file.write(cmd.argstr + '\n')
+    with open(SUGGESTION_FILE, 'a') as suggestion_file:
+        suggestion_file.write(cmd.argstr + '\n')
     await send_success(cmd.message)

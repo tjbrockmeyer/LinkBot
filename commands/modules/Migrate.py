@@ -13,38 +13,27 @@ from commands.cmd_utils import *
     ]
 )
 @restrict(SERVER_ONLY | ADMIN_ONLY)
-@require_args(2)
 async def migrate(cmd: Command):
     cmd.args = cmd.argstr.split(',')
+    if len(cmd.args) < 2:
+        raise CommandSyntaxError(cmd, "You must specify two comma-seperated channels.")
     channels = []
     for c in cmd.args:
-        channels.append(c.strip())
-
-    channel1 = None
-    channel2 = None
-
-    # find the two channels.
-    for channel in cmd.guild.channels:
-        if channel.type == discord.ChannelType.voice:
-            if channel.name.lower() == channels[0].lower():
-                channel1 = channel
-            elif channel.name.lower() == channels[1].lower():
-                channel2 = channel
-            # once they are both found, break the loop.
-            if channel1 is not None and channel2 is not None:
-                break
-
-    # Report that the loop did not break.
-    else:
-        if channel1 is None and channel2 is None:
-            raise CommandSyntaxError(cmd, "Neither '{}' nor '{}' are channels in this server.".format(*channels))
-        elif channel1 is None:
-            raise CommandSyntaxError(cmd, channels[0] + " is not a channel in this server.")
-        elif channel2 is None:
-            raise CommandSyntaxError(cmd, channels[1] + " is not a channel in this server.")
+        try:
+            chn_id = (int(c))
+            if chn_id <= len(cmd.guild.voice_channels):
+                channels.append(cmd.guild.voice_channels[chn_id])
+            else:
+                raise CommandError(cmd, "Voice channel id `{}` is out of range.".format(c))
+        except ValueError:
+            chn = c.strip().lower()
+            x = [(i, y) for (i, y) in enumerate(cmd.guild.voice_channels) if y.name.lower().startswith(chn)]
+            if len(x) > 0:
+                channels.append(cmd.guild.voice_channels[x[0][0]])
+            else:
+                raise CommandError(cmd, "`{}` is not an existing voice channel in this server.".format(c))
 
     # move each member from the first channel to the second channel.
-    for member in channel1.voice_members:
-        await member.move(channel2)
+    for member in channels[0].members:
+        await member.move_to(channels[1])
     await send_success(cmd.message)
-    time.sleep(3)

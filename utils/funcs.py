@@ -79,15 +79,20 @@ def create_config(filepath):
         ])
 
 
-def split_message(msgstr, length=2000):
-    if len(msgstr) <= length:
+def split_message(msgstr, maxlength=2000):
+    if len(msgstr) <= maxlength:
         yield msgstr
     else:
-        while len(msgstr) > length:
-            split_index = msgstr.rfind('\n', 0, length)
+        while len(msgstr) > maxlength:
+            split_index = msgstr.rfind('\n', 0, maxlength)
             if split_index == -1:
-                split_index = msgstr.rfind(' ', 0, length)
+                split_index = msgstr.rfind(' ', 0, maxlength)
                 if split_index == -1:
-                    split_index = length
+                    split_index = maxlength
             msgstr = msgstr[split_index:]
             yield msgstr[:split_index]
+
+
+async def send_split_message(target, message, maxlength=2000):
+    for msg in split_message(message, maxlength):
+        await target.send(msg)

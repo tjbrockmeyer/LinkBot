@@ -162,26 +162,17 @@ async def on_error(event_name, *args, **kwargs):
             await ch.send("{} {}".format(emoji.no_entry, e))
         elif etype is DeveloperError:
             await ch.send("{} {}".format(emoji.exclamation, e.public_reason))
-            await bot.owner.send("A DeveloperError has occurred:\n{}".format(e))
             await _send_traceback(fmt_exc)
         elif etype is CommandError:
             await ch.send("{} {}".format(emoji.x, e))
-
     else:
-        logging.error(fmt_exc)
-        if etype is LinkBotError:
-            await bot.owner.send("A generic LinkBot has occurred:\n{}".format(e))
-        elif etype is EventError:
-            await bot.owner.send("A generic EventError has occurred: {}\n  In event `{}`:".format(e, event_name))
-        else:
-            await bot.owner.send("A {} has occurred: {}".format(etype.__name__, e))
         await _send_traceback(fmt_exc)
 
 
 async def _send_traceback(tb):
+    logging.error(tb)
     for msg in split_message(tb, 1994):
         await bot.owner.send("```{}```".format(msg))
-
 
 
 cmd_dir = 'commands/modules/'

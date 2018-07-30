@@ -34,7 +34,7 @@ reminders = []
     ['{c} me [of <reason>] in #d#h#m#s', '{c} purge'],
     "Mentions you in a message once the given amount of time has passed.",
     [
-        ('{c} at 1d 10m', 'Reminds you via a direct message in 1 days and 10 minutes.'),
+        ('{c} in 1d 10m', 'Reminds you via a direct message in 1 days and 10 minutes.'),
         ('{c} me of bedtime in 1h 3s', 'Sends you a reminder in 1 hour, 2 minutes and 3 seconds.'),
         ('{c} purge', 'Removes all reminders that are set for you.')
     ]

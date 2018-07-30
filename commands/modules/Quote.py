@@ -1,8 +1,9 @@
 
+from commands.cmd_utils import *
+
+from utils.funcs import send_split_message
 import random
 import re
-
-from commands.cmd_utils import *
 
 
 @command(
@@ -50,14 +51,13 @@ async def quote(cmd: Command):
 
 async def quote_id(cmd, qid):
     # check that quote id is within bounds
-    if 0 <= qid < len(bot.data[cmd.guild.id]['quotes']):
-        (author, text) = bot.data[cmd.guild.id]['quotes'][qid]
-        if author != '':
-            await cmd.channel.send('{}\n\t\t\t-{}'.format(_nlrepl(text), author))
-        else:
-            raise CommandSyntaxError(cmd, str(qid) + ' is not a valid quote ID.')
-    else:
+    if not 0 <= qid < len(bot.data[cmd.guild.id]['quotes']):
         raise CommandSyntaxError(cmd, str(qid) + ' is not a valid quote ID.')
+    (author, text) = bot.data[cmd.guild.id]['quotes'][qid]
+    if author == '':
+        raise CommandSyntaxError(cmd, str(qid) + ' is not a valid quote ID.')
+
+    await cmd.channel.send('{}\n\t\t\t-{}'.format(_nlrepl(text), author))
 
 
 async def quote_list(cmd):
@@ -77,9 +77,10 @@ async def quote_list(cmd):
 
     # if quotes were found for the author/on the server
     if authorArg == '':
-        await cmd.channel.send("Quotes from this server:\n{}".format(_nlrepl(quoteList)))
+        msg = "Quotes from this server:\n{}".format(_nlrepl(quoteList))
     else:
-        await cmd.channel.send("Quotes from {}:\n{}".format(cmd.args[1], _nlrepl(quoteList)))
+        msg = "Quotes from {}:\n{}".format(cmd.args[1], _nlrepl(quoteList))
+    await send_split_message(cmd.channel, msg)
 
 
 async def quote_random(cmd):
@@ -149,7 +150,7 @@ async def quote_remove(cmd):
 
     author, text = bot.data[cmd.guild.id]['quotes'][q_id]
     bot.data[cmd.guild.id]['quotes'][q_id] = ('', '')
-    await cmd.channel.send("Quote removed: {}\n\t\t\t-{}".format(_nlrepl(text), author))
+    await cmd.channel.send("Quote removed: ~~{}~~\n\t\t\t-~~{}~~".format(_nlrepl(text), author))
 
 
 def _nlrepl(q):

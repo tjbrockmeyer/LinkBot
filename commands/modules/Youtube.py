@@ -18,7 +18,7 @@ async def youtube(cmd: Command):
         video_list = bot.googleClient.get_video_search_results(cmd.argstr, 1)
     except GoogleAPIError as e:
         raise DeveloperError(
-            cmd, "Google API Error: \n  Message: {}\n  Status: {}\n  From URL: {}".format(e, e.status_code, e.url),
+            cmd, "Google API Error:\n  Message: {}\n  Status: {}\n  From URL: {}".format(e, e.status_code, e.url),
             public_reason="An error occurred. The quota limit may have been reached.")
 
     # send link to first search result
