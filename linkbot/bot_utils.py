@@ -1,6 +1,7 @@
 
 from linkbot.bot import bot
 from utils import emoji
+import utils.database as db
 
 
 def is_admin(member):
@@ -13,11 +14,15 @@ def is_admin(member):
     """
     if is_owner(member):
         return True
-    if member.server.id not in bot.data:
-        return False
-    if 'admins' not in bot.data[member.server.id]:
-        return False
-    return member.id in bot.data[member.server.id]['admins']
+    with db.connect() as (conn, cur):
+        cur.execute(
+            """
+            SELECT user_id FROM admins
+            WHERE server_id = %s AND user_id = %s;
+            """, [member.guild.id, member.id])
+        if cur.fetchone() is not None:
+            return True
+    return False
 
 def is_owner(user):
     """
@@ -27,7 +32,7 @@ def is_owner(user):
     :return: True if the user is the bot's owner, False otherwise.
     :rtype: bool
     """
-    return user.id == bot.owner.id
+    return user == bot.owner
 
 
 async def send_success(message):

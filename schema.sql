@@ -4,14 +4,21 @@ CREATE TABLE servers (
     entry_role              bigint
 );
 
-CREATE TABLE users (
-    member_id               bigint primary key,
-    is_admin                boolean,
-    birthday                date
+CREATE TABLE admins (
+    server_id               bigint references servers(server_id),
+    user_id                 bigint
+);
+
+CREATE TABLE birthdays (
+    server_id               bigint references servers(server_id),
+    person                  text,
+    birthday                date,
+    last_congrats           integer default(0)
 );
 
 CREATE TABLE reminders (
-    remindee                bigint references users(member_id),
+    id                      serial primary key,
+    remindee                bigint,
     remind_at               timestamp,
     reason                  text
 );

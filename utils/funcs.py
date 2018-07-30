@@ -1,6 +1,7 @@
 
 import os
 import json
+from functools import reduce
 
 
 DATA_DIR = 'data/'
@@ -85,6 +86,14 @@ dbpassword=
 prefix=link.
 
 debug=False""")
+
+
+def english_listing(items):
+    if len(items) == 0:
+        return ''
+    if len(items) == 1:
+        return str(items[0])
+    return reduce(lambda x, y: "{}, {}".format(y, x), reversed(items[:-1]) , "and {}".format(items[-1]))
 
 
 def split_message(msgstr, maxlength=2000):

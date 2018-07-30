@@ -11,10 +11,7 @@ _db_connect_string = None
 def connect():
     with psql.connect(_db_connect_string) as conn:
         with conn.cursor() as cur:
-            try:
-                yield (conn, cur)
-            finally:
-                return
+            yield (conn, cur)
 
 
 def setup(config_file):
@@ -23,5 +20,5 @@ def setup(config_file):
     if None in db_connect:
         return False
     global _db_connect_string
-    _db_connect_string = "host='{}' dbname='{}' user='{}', password='{}'".format(*db_connect)
+    _db_connect_string = "host='{}' dbname='{}' user='{}' password='{}'".format(*db_connect)
     return True

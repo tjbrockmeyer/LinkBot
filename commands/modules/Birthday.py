@@ -1,6 +1,6 @@
 from commands.cmd_utils import *
 from datetime import datetime
-from discord.utils import get as get_channel
+from utils.funcs import english_listing
 
 
 @command(
@@ -16,12 +16,6 @@ from discord.utils import get as get_channel
 @restrict(SERVER_ONLY)
 @require_args(1)
 async def birthday(cmd: Command):
-    # create dict for server if it doesn't exist.
-    if cmd.guild.id not in bot.data:
-        bot.data[cmd.guild.id] = {}
-    if 'birthdays' not in bot.data[cmd.guild.id]:
-        bot.data[cmd.guild.id]['birthdays'] = {}
-
     subcmd = cmd.args[0].lower()
     cmd.shiftargs()
     if subcmd == "set":
@@ -35,29 +29,32 @@ async def birthday(cmd: Command):
 
 
 async def birthday_list(cmd):
-    today = datetime.now()
+    now = datetime.now()
+    with db.connect() as (conn, cur):
+        cur.execute(
+            """
+            SELECT person, birthday FROM birthdays
+            WHERE server_id = %s;
+            """, [cmd.guild.id])
+        vals = cur.fetchall()
     bdays = []
-    for (p, b) in bot.data[cmd.guild.id]['birthdays'].items():
-        bday = datetime.strptime(b, "%m/%d")
-        if bday.month > today.month or (bday.month == today.month and bday.day >= today.day):
-            bdays.append((p, datetime(today.year, bday.month, bday.day)))
+    for (p, b) in vals:
+        if b.month > now.month or (b.month == now.month and b.day >= now.day):
+            bdays.append([p, datetime(now.year, b.month, b.day)])
         else:
-            bdays.append((p, datetime(today.year + 1, bday.month, bday.day)))
-
+            bdays.append([p, datetime(now.year + 1, b.month, b.day)])
+    if len(bdays) == 0:
+        raise CommandError(cmd, "I don't know anyone's birthdays yet.")
     bdays.sort(key=lambda x: x[1])
 
     send_msg = ""
     for (p, b) in bdays:
         send_msg += p + ": " + b.strftime("%B %d") + "\n"
-
-    if send_msg == "":
-        raise CommandError(cmd, "I don't know anyone's birthdays yet.")
     await cmd.channel.send(send_msg)
 
 
 @restrict(ADMIN_ONLY)
 @require_args(2)
-@update_database
 async def birthday_set(cmd):
     bdayperson = cmd.args[0]
     bdayarg = cmd.args[1]
@@ -98,28 +95,59 @@ async def birthday_set(cmd):
                             cmd, 'Birthdays must be in the format of TB 09/02, TB 09-02, TB Sep 02 or TB September 02.')
 
     # set the birthday for the server and person.
-    bot.data[cmd.guild.id]['birthdays'][bdayperson] = bday.strftime("%m/%d")
+    bday = datetime(year=1, month=bday.month, day=bday.day)
+    with db.connect() as (conn, cur):
+        cur.execute(
+            """
+            DELETE FROM birthdays
+            WHERE server_id = %s AND person = %s;
+            """, [cmd.guild.id, bdayperson])
+        cur.execute(
+            """
+            INSERT INTO birthdays (server_id, person, birthday)
+            VALUES (%s, %s, %s);
+            """, [cmd.guild.id, bdayperson, bday])
+        conn.commit()
     await send_success(cmd.message)
 
 
 @restrict(ADMIN_ONLY)
 @require_args(1)
-@update_database
 async def birthday_remove(cmd):
     person = cmd.args[0]
-    if person not in bot.data[cmd.guild.id]['birthdays']:
-        raise CommandError(cmd, "{} doesn't have a registered birthday.".format(person))
-    bot.data[cmd.guild.id]['birthdays'].pop(person)
+    with db.connect() as (conn, cur):
+        cur.execute(
+            """
+            DELETE FROM birthdays
+            WHERE server_id = %s AND person = %s;
+            """, [cmd.guild.id, person])
+        if cur.rowcount == 0:
+            raise CommandError(cmd, "{} doesn't have a registered birthday.".format(person))
+        conn.commit()
     await send_success(cmd.message)
 
 
-@on_event('ready')
+@background_task
 async def birthday_check():
-    today = datetime.now()
-    for server in client.guilds:
-        if server.id in bot.data and 'birthdays' in bot.data[server.id]:
-            for p, b in bot.data[server.id]['birthdays'].items():
-                bday = datetime.strptime(b, "%m/%d")
-                if bday.day == today.day and bday.month == today.month:
-                    bot.send_message(get_channel(server.channels, is_default=True), "Today is {}'s birthday!".format(p))
+    while True:
+        now = datetime.now()
+        today = datetime(year=1, month=now.month, day=now.day)
+        for guild in client.guilds:
+            with db.connect() as (conn, cur):
+                cur.execute(
+                    """
+                    SELECT person, last_congrats FROM birthdays
+                    WHERE server_id = %s AND birthday = %s;
+                    """, [guild.id, today])
+                user_listing = english_listing([x[0] for x in cur.fetchall() if x[1] != now.year])
+                if len(user_listing) > 0:
+                    # await discord.utils.get(guild.channels, is_default=True).send("Happy birthday, {}!".format(users)
+                    await bot.owner.send("Happy birthday, {}!".format(user_listing))
+                    cur.execute(
+                        """
+                        UPDATE birthdays SET last_congrats = %s
+                        WHERE person IN %s;
+                        """, [now.year, tuple(d[0] for d in user_listing)])
+                    conn.commit()
+        await asyncio.sleep(900)
 

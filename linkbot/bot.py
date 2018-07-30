@@ -7,6 +7,7 @@ import traceback
 from functools import wraps, reduce
 from importlib import import_module
 
+import utils.database as db
 from utils.funcs import load_json, create_config, split_message
 from utils.IniIO import IniIO
 from utils import emoji
@@ -134,6 +135,30 @@ async def on_ready():
 @event
 async def on_member_join(member):
     pass
+
+
+@event
+async def on_guild_join(guild):
+    # Add an entry for this guild into the database.
+    with db.connect() as (conn, cur):
+        cur.execute(
+            """
+            INSERT INTO servers (server_id)
+            VALUES (%s);
+            """, [guild.id])
+        conn.commit()
+
+
+@event
+async def on_guild_remove(guild):
+    with db.connect() as (conn, cur):
+        cur.execute(
+            """
+            DELETE FROM servers
+            WHERE server_id = %s
+            CASCADE;
+            """, [guild.id])
+        conn.commit()
 
 
 @event
