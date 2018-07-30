@@ -23,6 +23,11 @@ DATABASE_FILE = DATA_FOLDER + 'database.json'
 REMINDERS_FILE = DATA_FOLDER + 'reminders.json'
 
 
+import utils.database as db
+if not db.setup(CONFIG_FILE):
+    raise InitializationError(
+        "Failed to connect to the database. Be sure that your database settings in {} have been set up properly."
+            .format(CONFIG_FILE))
 client = discord.Client()
 
 
