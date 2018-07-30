@@ -35,6 +35,7 @@ async def entryrole(cmd: Command):
         if 'entryrole' not in bot.data[cmd.guild.id]:
             raise CommandError(cmd, "There isn't an entry role to remove.")
         del bot.data[cmd.guild.id]['entryrole']
+        await send_success(cmd.message)
     else:
         raise CommandSyntaxError(cmd, "Invalid subcommand.")
 

@@ -4,6 +4,7 @@ import asyncio
 import discord
 from functools import wraps
 
+from utils.funcs import save_json
 from linkbot.bot import bot, client
 from linkbot.errors import *
 from linkbot.bot_utils import *
@@ -64,7 +65,7 @@ def update_database(func):
     @wraps(func)
     async def wrapper(cmd, *args, **kwargs):
         await func(cmd, *args, **kwargs)
-        bot.save_data()
+        save_json('data/database.json', bot.data)
     return wrapper
 
 

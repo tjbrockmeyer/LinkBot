@@ -76,5 +76,5 @@ class CommandInfo:
         """
         for ex in self.examples:
             embed.add_field(name="{mk}{cmd}{mk}"
-                            .format(cmd=ex.cmd.format(prefix=prefix),
+                            .format(cmd=ex.cmd.format(c=prefix + self.command),
                                     mk='`' if cmd_as_code else ''), value=ex.effect, inline=True)

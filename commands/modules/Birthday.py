@@ -25,11 +25,11 @@ async def birthday(cmd: Command):
     subcmd = cmd.args[0].lower()
     cmd.shiftargs()
     if subcmd == "set":
-        birthday_set(cmd)
+        await birthday_set(cmd)
     elif subcmd == "remove":
-        birthday_remove(cmd)
+        await birthday_remove(cmd)
     elif subcmd == "list":
-        birthday_list(cmd)
+        await birthday_list(cmd)
     else:
         raise CommandSyntaxError(cmd, "Invalid subcommand.")
 
@@ -111,7 +111,6 @@ async def birthday_remove(cmd):
         raise CommandError(cmd, "{} doesn't have a registered birthday.".format(person))
     bot.data[cmd.guild.id]['birthdays'].pop(person)
     await send_success(cmd.message)
-    bot.save_data()
 
 
 @on_event('ready')

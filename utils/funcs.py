@@ -77,3 +77,17 @@ def create_config(filepath):
 
             "debug=False\n",
         ])
+
+
+def split_message(msgstr, length=2000):
+    if len(msgstr) <= length:
+        yield msgstr
+    else:
+        while len(msgstr) > length:
+            split_index = msgstr.rfind('\n', 0, length)
+            if split_index == -1:
+                split_index = msgstr.rfind(' ', 0, length)
+                if split_index == -1:
+                    split_index = length
+            msgstr = msgstr[split_index:]
+            yield msgstr[:split_index]

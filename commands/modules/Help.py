@@ -16,7 +16,7 @@ async def help(cmd: Command):
        "Argument syntax:  `<mandatory> [optional]`\n" \
        "Command prefix: '{prefix}'\n" \
        "Use `{help_syntax}` to get more info on a particular command, for example: 'help quote'" \
-        .format(prefix=bot.prefix, help_syntax=cmd.info.get_syntax_with_format())
+        .format(prefix=bot.prefix, help_syntax=cmd.info.get_syntax_with_format(bot.prefix))
 
     here = len(cmd.args) > 0 and cmd.args[0].lower() == "here"
 
@@ -40,7 +40,7 @@ async def help(cmd: Command):
                               color=discord.Color(0x127430),
                               description=cmdInfo.description)
         cmdInfo.embed_examples(embed, bot.prefix, cmd_as_code=False)
-        await cmd.author if not here else cmd.channel.send(embed=embed)
+        await cmd.author.send(embed=embed) if not here else await cmd.channel.send(embed=embed)
 
     # if "help [here]"
     else:
@@ -49,5 +49,5 @@ async def help(cmd: Command):
                               description=help_header)
         for x in sorted(list(set([y for y in bot.commands.values() if y.show_in_help])), key=lambda z: z.command):
             x.embed_syntax(embed, bot.prefix, mk_down='`', title_mk_down='__', sep='\n', inline=True)
-        await cmd.author if not here else cmd.channel.send(embed=embed)
+        await cmd.author.send(embed=embed) if not here else await cmd.channel.send(embed=embed)
 

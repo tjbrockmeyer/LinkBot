@@ -4,10 +4,10 @@ import logging
 import asyncio
 import discord
 import traceback
-from functools import wraps
+from functools import wraps, reduce
 from importlib import import_module
 
-from utils.funcs import load_json, create_config
+from utils.funcs import load_json, create_config, split_message
 from utils.IniIO import IniIO
 from utils import emoji
 from linkbot.errors import *
@@ -143,37 +143,44 @@ async def on_message(message):
                 if cmd.is_valid:
                     await cmd.run()
                 else:
-                    message.channel.send('"{}" is not a valid command.'.format(cmd.command_arg))
+                    raise CommandError(cmd, '"{}" is not a valid command.'.format(cmd.command_arg))
 
 
 @client.event
 async def on_error(event_name, *args, **kwargs):
     etype, e, tb = sys.exc_info()
-    ch = e.cmd.channel
+    fmt_exc = reduce(lambda x, y: "{}{}".format(x, y), traceback.format_exception(etype, e, tb), "")
     if etype is InitializationError:
         raise e
-    elif etype is CommandSyntaxError:
-        subcmd = e.cmd.message.content[:e.cmd.message.content.find(e.cmd.argstr)].strip()
-        await ch.send("{} {} Try `{}help {}` for help on how to use `{}`."
-                      .format(emoji.warning, e, bot.prefix, e.cmd.command_arg, subcmd))
-    elif etype is CommandPermissionError:
-        await ch.send("{} {}".format(emoji.no_entry, e))
-    elif etype is DeveloperError:
-        fmt_exc = traceback.format_exception(etype, e, tb)
-        await ch.send("{} {}".format(emoji.exclamation, e.public_reason))
-        await bot.owner.send("A DeveloperError has occurred:\n{}\n```{}```".format(e, fmt_exc))
-    elif etype is CommandError:
-        await ch.send("{} {}".format(emoji.x, e))
-    elif etype is LinkBotError:
-        fmt_exc = traceback.format_exception(etype, e, tb)
-        await bot.owner.send("A generic LinkBot has occurred:\n{}\n```{}```".format(e, fmt_exc))
-    elif etype is EventError:
-        fmt_exc = traceback.format_exception(etype, e, tb)
-        await bot.owner.send("A generic EventError has occurred:\n  In event `{}`: {}\n```{}```"
-                             .format(event_name, e, fmt_exc))
+    if issubclass(etype, CommandError):
+        ch = e.cmd.channel
+        if etype is CommandSyntaxError:
+            # TODO: subcmd = e.cmd.message.content[:e.cmd.message.content.find(e.cmd.argstr)].strip()
+            await ch.send("{} {} Try `{}help {}` for help on how to use `{}`."
+                          .format(emoji.warning, e, bot.prefix, e.cmd.command_arg, e.cmd.command_arg))
+        elif etype is CommandPermissionError:
+            await ch.send("{} {}".format(emoji.no_entry, e))
+        elif etype is DeveloperError:
+            await ch.send("{} {}".format(emoji.exclamation, e.public_reason))
+            await bot.owner.send("A DeveloperError has occurred:\n{}".format(e))
+            await _send_traceback(fmt_exc)
+        elif etype is CommandError:
+            await ch.send("{} {}".format(emoji.x, e))
+
     else:
-        fmt_exc = traceback.format_exception(etype, e, tb)
-        await bot.owner.send("A {} has occurred:\n```{}```".format(etype, fmt_exc))
+        logging.error(fmt_exc)
+        if etype is LinkBotError:
+            await bot.owner.send("A generic LinkBot has occurred:\n{}".format(e))
+        elif etype is EventError:
+            await bot.owner.send("A generic EventError has occurred: {}\n  In event `{}`:".format(e, event_name))
+        else:
+            await bot.owner.send("A {} has occurred: {}".format(etype.__name__, e))
+        await _send_traceback(fmt_exc)
+
+
+async def _send_traceback(tb):
+    for msg in split_message(tb, 1994):
+        await bot.owner.send("```{}```".format(msg))
 
 
 

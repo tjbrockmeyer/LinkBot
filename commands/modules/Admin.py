@@ -50,6 +50,8 @@ async def admin_list(cmd):
 @restrict(ADMIN_ONLY)
 @update_database
 async def admin_add(cmd):
+    if len(cmd.message.mentions) == 0 and len(cmd.message.role_mentions) == 0:
+        raise CommandSyntaxError(cmd, "You must at-mention at least one role or user.")
     # the output cmd at the end.
     msg = ''
 
@@ -76,6 +78,8 @@ async def admin_add(cmd):
 @restrict(ADMIN_ONLY)
 @update_database
 async def admin_remove(cmd):
+    if len(cmd.message.mentions) == 0 and len(cmd.message.role_mentions) == 0:
+        raise CommandSyntaxError(cmd, "You must at-mention at least one role or user.")
     # the output message at the end.
     msg = ''
 
