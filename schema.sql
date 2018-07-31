@@ -17,7 +17,7 @@ CREATE TABLE birthdays (
     server_id               bigint      references servers(server_id),
     person                  text        not null,
     birthday                date        not null,
-    last_congrats           integer,
+    last_congrats           integer
 );
 
 CREATE TABLE quotes (
