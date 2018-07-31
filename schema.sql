@@ -23,11 +23,13 @@ CREATE TABLE reminders (
 );
 
 CREATE TABLE quotes (
+    server_id               bigint references servers(server_id),
     id                      integer primary key,
     author                  text,
-    quotes                  text
+    quote                   text
 );
 
 CREATE TABLE suggestions (
+    id                      serial primary key,
     suggestion              text unique
 );

@@ -76,8 +76,16 @@ class LinkBot:
 
 
     def run(self):
+        from pathlib import Path
+        if os.path.isfile('INSTANCE'):
+            raise InitializationError("Only one instance may be running at a time.")
+        Path('INSTANCE').touch()
         logging.info('Initializing and logging in...')
-        client.run(self.token)
+        try:
+            client.run(self.token)
+        finally:
+            os.remove('INSTANCE')
+
         logging.info('Bot has been logged out.')
         if self.restart:
             logging.info("Restarting...")
