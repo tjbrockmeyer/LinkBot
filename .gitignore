@@ -1,7 +1,8 @@
 # Sensitive information
 config.ini
 
-# Generated directories
+# Generated files/directories
+INSTANCE
 .idea/
 __pycache__/
 data/
