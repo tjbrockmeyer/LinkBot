@@ -17,8 +17,7 @@ CREATE TABLE birthdays (
 );
 
 CREATE TABLE reminders (
-    id                      serial primary key,
-    remindee                bigint,
+    remindee_id             bigint,
     remind_at               timestamp,
     reason                  text
 );
@@ -30,6 +29,5 @@ CREATE TABLE quotes (
 );
 
 CREATE TABLE suggestions (
-    id                      serial primary key,
-    suggestion              text
+    suggestion              text unique
 );

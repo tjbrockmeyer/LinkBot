@@ -1,32 +1,11 @@
 
 import re
 import asyncio
-from datetime import datetime, timedelta
-from linkbot.bot import DATA_FOLDER
 from linkbot.utils.cmd_utils import *
+from datetime import datetime, timedelta
 
 
-class Reminder:
-    datefmt = '%d%m%Y%H%M%S'
-    def __init__(self, target, time, reason):
-        self.target = target
-        self.time = time
-        self.reason = reason
-
-    def to_json(self):
-        return {'target': self.target.id, 'time': self.time.strftime(Reminder.datefmt), 'reason': self.reason}
-
-    @staticmethod
-    def from_json(data):
-        return Reminder(
-            client.get_user(data['target']),
-            datetime.strptime(data['time'], Reminder.datefmt),
-            data['reason'])
-
-
-REMINDERS_FILE = DATA_FOLDER + 'reminders.json'
 _delay_regex = re.compile(r"(?:(\d+)d ?)?(?:(\d+)h ?)?(?:(\d+)m ?)?(?:(\d+)s)?")
-reminders = []
 
 
 @command(
@@ -41,18 +20,13 @@ reminders = []
 @require_args(1)
 async def remind(cmd: Command):
     if cmd.args[0] == 'purge':
-        remove = []
-        for (index, r) in enumerate(reminders):
-            print(r.target, cmd.author)
-            if r.target == cmd.author:
-                remove.append(index)
-        if len(remove) > 0:
-            for r in reversed(remove):
-                del reminders[r]
-            _save_reminders()
+        with db.connect() as (conn, cur):
+            cur.execute("DELETE FROM reminders WHERE remindee_id = %s;", [cmd.author.id])
+            conn.commit()
         await send_success(cmd.message)
         return
 
+    # Parse the optional args and "feelgood" words.
     try:
         reason = ''
         if cmd.args[0] == 'me':
@@ -60,7 +34,7 @@ async def remind(cmd: Command):
         if cmd.args[0] == 'of':
             cmd.shiftargs()
             while True:
-                if len(cmd.args) == 0:
+                if not cmd.args:
                     raise CommandSyntaxError(cmd, 'Tell me when to remind you with `in #d#h#m#s`.')
                 elif cmd.args[0] == 'in' and _delay_regex.match(cmd.argstr[3:].strip()):
                     break
@@ -72,6 +46,7 @@ async def remind(cmd: Command):
     except IndexError:
         raise CommandSyntaxError(cmd, 'You need to specify a delay.')
 
+    # Parse the delay.
     try:
         match = _delay_regex.match(cmd.argstr)
         if match:
@@ -86,21 +61,21 @@ async def remind(cmd: Command):
         raise CommandSyntaxError(cmd, 'Days, hours, minutes and seconds can only be whole numbers.')
 
     now = datetime.now()
-    remind_at_time = now + timedelta(seconds=delay)
-    reminder = Reminder(cmd.author, remind_at_time, reason)
+    remind_at = now + timedelta(seconds=delay)
 
     if delay < 61:
-        client.loop.create_task(remind_soon(reminder))
+        client.loop.create_task(remind_soon(cmd.author, remind_at, reason))
     else:
-        reminders.append(reminder)
-        _save_reminders()
+        with db.connect() as (conn, cur):
+            cur.execute("INSERT INTO reminders (remindee_id, remind_at, reason) VALUES (%s, %s, %s);",
+                        [cmd.author.id, remind_at, reason])
+            conn.commit()
 
     # Exclude date from notification if the reminder will occur within 24 hours.
     if delay < 85000:
-        outstring = "I'll remind you at {}".format(remind_at_time.strftime('%I:%M:%S %p'))
+        outstring = remind_at.strftime("I'll remind you at %r")
     else:
-        outstring = "I'll remind you on {} at {}".format(
-            remind_at_time.strftime('%a, %b %-m'), remind_at_time.strftime('%I:%M:%S %p'))
+        outstring = remind_at.strftime("I'll remind you on %a, %b %-m at %r")
 
     # Include reason in the notification if it was provided.
     if reason != '':
@@ -112,36 +87,24 @@ async def remind(cmd: Command):
 
 @background_task
 async def remind_loop():
-    min_time = timedelta(seconds=61)
+    delta_time = timedelta(seconds=61)
     while not client.is_closed():
-        now = datetime.now()
-        remove = []
-        for (index, r) in enumerate(reminders):
-            if r.time - now < min_time:
-                remove.append(index)
-                client.loop.create_task(remind_soon(r))
-        if len(remove) > 0:
-            for r in reversed(remove):
-                del reminders[r]
-            _save_reminders()
+        min_time = datetime.now() + delta_time
+        with db.connect() as (conn, cur):
+            cur.execute("SELECT * FROM reminders WHERE remind_at < %s;", [min_time])
+            results = cur.fetchall()
+            cur.execute("DELETE FROM reminders WHERE remind_at < %s;", [min_time])
+            for (remindee_id, remind_at, reason) in results:
+                remindee = client.get_user(remindee_id)
+                client.loop.create_task(remind_soon(remindee, remind_at, reason))
+            conn.commit()
         await asyncio.sleep(60)
 
 
-@on_event('ready')
-async def load_reminders():
-    return
-    global reminders
-    reminders = [Reminder.from_json(x) for x in load_json(REMINDERS_FILE)]
-
-
-async def remind_soon(reminder):
-    delta_time = (reminder.time - datetime.now()).total_seconds()
+async def remind_soon(remindee, remind_at, reason):
+    delta_time = (remind_at - datetime.now()).total_seconds()
     await asyncio.sleep(delta_time)
-    if reminder.reason == '':
-        await reminder.target.send('This is your reminder {}!'.format(reminder.target.name))
+    if reason == '':
+        await remindee.send('This is your reminder {}!'.format(remindee.name))
     else:
-        await reminder.target.send('I\'m reminding you about "{}", {}!'.format(reminder.reason, reminder.target.name))
-
-
-def _save_reminders():
-    save_json(REMINDERS_FILE, [r.to_json() for r in reminders])
+        await remindee.send('I\'m reminding you about "{}", {}!'.format(reason, remindee.name))
