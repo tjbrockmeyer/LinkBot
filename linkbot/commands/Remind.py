@@ -1,10 +1,9 @@
 
 import re
+import asyncio
 from datetime import datetime, timedelta
-
-from commands.cmd_utils import *
 from linkbot.bot import DATA_FOLDER
-from utils.funcs import load_json, save_json
+from linkbot.utils.cmd_utils import *
 
 
 class Reminder:
@@ -97,7 +96,7 @@ async def remind(cmd: Command):
         _save_reminders()
 
     # Exclude date from notification if the reminder will occur within 24 hours.
-    if delay < 86400:
+    if delay < 85000:
         outstring = "I'll remind you at {}".format(remind_at_time.strftime('%I:%M:%S %p'))
     else:
         outstring = "I'll remind you on {} at {}".format(
@@ -130,6 +129,7 @@ async def remind_loop():
 
 @on_event('ready')
 async def load_reminders():
+    return
     global reminders
     reminders = [Reminder.from_json(x) for x in load_json(REMINDERS_FILE)]
 

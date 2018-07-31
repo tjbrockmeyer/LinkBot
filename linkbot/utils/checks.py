@@ -1,7 +1,6 @@
 
+from linkbot.utils import database as db
 from linkbot.bot import bot
-from utils import emoji
-import utils.database as db
 
 
 def is_admin(member):
@@ -33,7 +32,3 @@ def is_owner(user):
     :rtype: bool
     """
     return user == bot.owner
-
-
-async def send_success(message):
-    await message.add_reaction(emoji=emoji.checkmark)

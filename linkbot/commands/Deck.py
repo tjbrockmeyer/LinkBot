@@ -1,6 +1,7 @@
 
-from commands.cmd_utils import *
 from random import Random
+
+from linkbot.utils.cmd_utils import *
 
 
 class Deck:

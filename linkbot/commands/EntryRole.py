@@ -1,4 +1,4 @@
-from commands.cmd_utils import *
+from linkbot.utils.cmd_utils import *
 
 
 MY_SERVER_ID = 153368514390917120
@@ -14,7 +14,6 @@ ENTRY_LEVEL_ROLE_ID = 215608168519172096
     ]
 )
 @restrict(SERVER_ONLY)
-@update_database
 async def entryrole(cmd: Command):
     if len(cmd.args) == 0:
         if 'entryrole' not in bot.data[cmd.guild.id]:

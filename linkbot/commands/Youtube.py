@@ -1,5 +1,5 @@
-from commands.cmd_utils import *
 from GoogleAPI import GoogleAPIError
+from linkbot.utils.cmd_utils import *
 
 
 @command(

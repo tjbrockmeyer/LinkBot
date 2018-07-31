@@ -1,5 +1,5 @@
-from commands.cmd_utils import *
 from linkbot.bot import SUGGESTION_FILE
+from linkbot.utils.cmd_utils import *
 
 
 @command(

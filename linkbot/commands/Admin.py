@@ -1,6 +1,6 @@
-from commands.cmd_utils import *
 from functools import reduce
-import utils.database as db
+
+from linkbot.utils.cmd_utils import *
 
 
 @command(

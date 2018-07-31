@@ -42,14 +42,23 @@ class IniIO(dict):
     @staticmethod
     def load(filepath):
         options = IniIO()
+        section = None
         with open(filepath, 'r') as f:
-            for line in f:
+            for (i, line) in enumerate(f):
                 line = line.strip()
-                if len(line) == 0 or line[0] == '#':
+                if not line or line[0] == '#' or line[0] == ';':
+                    continue
+                if line.startswith('['):
+                    index = line.find(']')
+                    if index == -1:
+                        raise IOError('File {}, Line {}    Valid section headers must be in the form of "[section]"'
+                                      .format(filepath, i + 1))
+                    section = line[1:index]
                     continue
                 index = line.find('=')
-                if index == -1 or len(line[:index]) == 0 or len(line[index:]) == 0:
-                    print('Valid config lines must be in the form of "key=value".')
-                    continue
-                options[line[:index]] = line[index + 1:]
+                if index == -1 or not line[:index].rstrip():
+                    raise IOError('File {}, Line {}    Valid properties must be in the form of "key=value"'
+                                  .format(filepath, i + 1))
+                options[("{}.".format(section) if section is not None else '')
+                        + line[:index].rstrip()] = line[index + 1:]
         return options

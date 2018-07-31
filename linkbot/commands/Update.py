@@ -1,8 +1,9 @@
-from commands.cmd_utils import *
-from commands.modules.Logout import logout
-import threading
 import os
+import threading
+
 import git
+from linkbot.commands.Logout import logout
+from linkbot.utils.cmd_utils import *
 
 
 @command(

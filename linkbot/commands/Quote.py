@@ -1,9 +1,9 @@
 
-from commands.cmd_utils import *
-
-from utils.funcs import send_split_message
 import random
 import re
+
+from linkbot.utils.misc import send_split_message
+from linkbot.utils.cmd_utils import *
 
 
 @command(
@@ -107,7 +107,6 @@ async def quote_random(cmd):
 
 @restrict(ADMIN_ONLY)
 @require_args(2)
-@update_database
 async def quote_add(cmd):
     q_args = cmd.argstr
     match = re.search('( -\w)', q_args)
@@ -134,7 +133,6 @@ async def quote_add(cmd):
 
 @restrict(ADMIN_ONLY)
 @require_args(1)
-@update_database
 async def quote_remove(cmd):
     # ID type-check
     try:

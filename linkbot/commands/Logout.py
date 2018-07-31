@@ -1,5 +1,4 @@
-from commands.cmd_utils import *
-import threading
+from linkbot.utils.cmd_utils import *
 
 
 @command(

@@ -1,16 +1,13 @@
 
 import logging
-import asyncio
 import discord
 from functools import wraps
 
-from utils.funcs import save_json
-from linkbot.bot import bot, client
+from linkbot.bot import client
 from linkbot.errors import *
-from linkbot.bot_utils import *
-from commands.command import Command
-from commands.command_info import CommandInfo
-
+from linkbot.utils.checks import *
+from linkbot.utils.emoji import send_success
+from linkbot.utils.command import Command, CommandInfo
 
 DISABLE = 1
 ADMIN_ONLY = 2
@@ -61,14 +58,6 @@ def require_args(count):
     return decorator
 
 
-def update_database(func):
-    @wraps(func)
-    async def wrapper(cmd, *args, **kwargs):
-        await func(cmd, *args, **kwargs)
-        save_json('data/database.json', bot.data)
-    return wrapper
-
-
 def background_task(func):
     @wraps(func)
     async def wrapper():
@@ -95,7 +84,7 @@ def command(syntax, description, examples, aliases=None, show_in_help=True, help
         @wraps(func)
         async def wrapper(cmd: Command, *args, **kwargs):
             if help_subcommand and len(cmd.args) > 0 and cmd.args[0] == 'help':
-                from commands.modules.Help import help
+                from linkbot.commands import help
                 cmd.args = [cmd.command_arg]
                 cmd.argstr = cmd.command_arg
                 await help(cmd)

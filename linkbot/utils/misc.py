@@ -7,27 +7,9 @@ from functools import reduce
 DATA_DIR = 'data/'
 
 
-def format_as_column(content, column_length, alignment=-1):
-    """
-    Returns the append string with spaces added to create a column format.
-
-    :param alignment: The alignment of the content in the column. -1 for left, 0 for center, 1 for right.
-    :type alignment: int
-    :param content: String of text to be formatted.
-    :type content: str
-    :param column_length: Number of characters in this column.
-    :type column_length: int
-    :return: The newly formatted string.
-    :rtype: str
-    """
-    add_spaces = column_length - len(content)
-    if alignment == 0:
-        left = add_spaces // 2
-        right = add_spaces - left
-        return " " * left + content + " " * right
-    if alignment < 0:
-        return content + " " * add_spaces
-    return " " * add_spaces + content
+def create_data_dir():
+    if not os.path.isdir(DATA_DIR):
+        os.mkdir(DATA_DIR)
 
 
 def save_json(filepath, data, pretty=False):
@@ -42,9 +24,42 @@ def load_json(filepath):
         return json.load(f)
 
 
-def create_data_dir():
-    if not os.path.isdir(DATA_DIR):
-        os.mkdir(DATA_DIR)
+def format_as_column(content, column_length, alignment=-1):
+    add_spaces = column_length - len(content)
+    if alignment == 0:
+        left = add_spaces // 2
+        right = add_spaces - left
+        return " " * left + content + " " * right
+    if alignment < 0:
+        return content + " " * add_spaces
+    return " " * add_spaces + content
+
+
+def english_listing(items):
+    if not items:
+        return ''
+    if len(items) == 1:
+        return str(items[0])
+    return reduce(lambda x, y: "{}, {}".format(y, x), reversed(items[:-1]) , "and {}".format(items[-1]))
+
+
+def split_message(msgstr, maxlength=2000):
+    if len(msgstr) <= maxlength:
+        yield msgstr
+    else:
+        while len(msgstr) > maxlength:
+            split_index = msgstr.rfind('\n', 0, maxlength)
+            if split_index == -1:
+                split_index = msgstr.rfind(' ', 0, maxlength)
+                if split_index == -1:
+                    split_index = maxlength
+            msgstr = msgstr[split_index:]
+            yield msgstr[:split_index]
+
+
+async def send_split_message(target, message, maxlength=2000):
+    for msg in split_message(message, maxlength):
+        await target.send(msg)
 
 
 def create_config(filepath):
@@ -86,30 +101,3 @@ dbpassword=
 prefix=link.
 
 debug=False""")
-
-
-def english_listing(items):
-    if len(items) == 0:
-        return ''
-    if len(items) == 1:
-        return str(items[0])
-    return reduce(lambda x, y: "{}, {}".format(y, x), reversed(items[:-1]) , "and {}".format(items[-1]))
-
-
-def split_message(msgstr, maxlength=2000):
-    if len(msgstr) <= maxlength:
-        yield msgstr
-    else:
-        while len(msgstr) > maxlength:
-            split_index = msgstr.rfind('\n', 0, maxlength)
-            if split_index == -1:
-                split_index = msgstr.rfind(' ', 0, maxlength)
-                if split_index == -1:
-                    split_index = maxlength
-            msgstr = msgstr[split_index:]
-            yield msgstr[:split_index]
-
-
-async def send_split_message(target, message, maxlength=2000):
-    for msg in split_message(message, maxlength):
-        await target.send(msg)

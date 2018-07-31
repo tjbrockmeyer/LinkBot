@@ -1,5 +1,6 @@
-from commands.cmd_utils import *
 import discord
+
+from linkbot.utils.cmd_utils import *
 
 
 @command(

@@ -1,7 +1,7 @@
 
-import psycopg2 as psql
-from utils.IniIO import IniIO
 from contextlib import contextmanager
+import psycopg2 as psql
+from linkbot.utils.ini import IniIO
 
 
 _db_connect_string = None
@@ -16,7 +16,8 @@ def connect():
 
 def setup(config_file):
     options = IniIO.load(config_file)
-    db_connect = [options.get('dbhost'), options.get('dbname'), options.get('dbuser'), options.get('dbpassword')]
+    db_connect = [options.get('database.hostname'), options.get('database.name'),
+                  options.get('database.user'), options.get('database.password')]
     if None in db_connect:
         return False
     global _db_connect_string

@@ -1,34 +1,26 @@
+import logging
 import os
 import sys
-import logging
-import asyncio
-import discord
 import traceback
 from functools import wraps, reduce
 from importlib import import_module
 
-import utils.database as db
-from utils.funcs import load_json, create_config, split_message
-from utils.IniIO import IniIO
-from utils import emoji
-from linkbot.errors import *
-from commands.command import Command
+import discord
+
 import GoogleAPI
 import RiotAPI
-
+from linkbot.errors import *
+from linkbot.utils.ini import IniIO
+from linkbot.utils import emoji
+import linkbot.utils.database as db
+from linkbot.utils.command import Command
+from linkbot.utils.misc import load_json, create_config, split_message
 
 DATA_FOLDER = 'data/'
 CONFIG_FILE = 'config.ini'
 SUGGESTION_FILE = DATA_FOLDER + 'suggestions.txt'
 DATABASE_FILE = DATA_FOLDER + 'database.json'
 REMINDERS_FILE = DATA_FOLDER + 'reminders.json'
-
-
-import utils.database as db
-if not db.setup(CONFIG_FILE):
-    raise InitializationError(
-        "Failed to connect to the database. Be sure that your database settings in {} have been set up properly."
-            .format(CONFIG_FILE))
 client = discord.Client()
 
 
@@ -62,18 +54,18 @@ class LinkBot:
         options = IniIO.load(CONFIG_FILE)
         self.owner_id = options.get_int('ownerDiscordId', default=None)
         self.owner = None
-        self.token = options.get_str('botToken', default=None)
-        self.client_id = options.get_int('botClientId', default=None)
-        self.client_secret = options.get_str('botClientSecret', default=None)
+        self.token = options.get_str('bot.token', default=None)
+        self.client_id = options.get_int('bot.clientId', default=None)
+        self.client_secret = options.get_str('bot.clientSecret', default=None)
         self.prefix = options.get_str('prefix', default=None)
-        google_apikey = options.get_str('googleApiKey', default=None)
+        google_apikey = options.get_str('apikeys.google', default=None)
         self.googleClient = GoogleAPI.Client(google_apikey) if google_apikey is not None else None
-        riot_apikey = options.get_str('riotApiKey', default=None)
+        riot_apikey = options.get_str('apikeys.riotgames', default=None)
         self.riotClient = RiotAPI.Client(riot_apikey) if riot_apikey is not None else None
         self.debug = options.get_bool('debug')
 
         if self.token is None or self.client_id is None or self.client_secret is None:
-            raise InitializationError("'botToken', 'botClientId', and 'botClientSecret' must be specified in {}."
+            raise InitializationError("'token', 'clientId', and 'clientSecret' must be specified in {}."
                                       .format(CONFIG_FILE))
         if self.owner_id is None:
             raise InitializationError("'ownerDiscordId' must be specified with your Discord user ID in {}."
@@ -205,7 +197,20 @@ async def _send_traceback(tb):
         await bot.owner.send("```{}```".format(msg))
 
 
-cmd_dir = 'commands/modules/'
+
+# Database setup and test.
+if not db.setup(CONFIG_FILE):
+    raise InitializationError(
+        "Failed to connect to the database. Be sure that your database settings in {} have been set up properly."
+            .format(CONFIG_FILE))
+try:
+    with db.connect():
+        pass
+except:
+    raise InitializationError("Failed to connect to the database. Is the hostname correct, and is the database online?")
+
+# Import all commands.
+cmd_dir = 'linkbot/commands/'
 for file in [cmd_dir + f for f in os.listdir(cmd_dir)]:
     if os.path.isfile(file) and not file.endswith('__init__.py'):
         package = file.replace('/', '.')[:-3]

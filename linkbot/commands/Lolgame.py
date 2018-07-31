@@ -1,6 +1,6 @@
-from commands.cmd_utils import *
 from RiotAPI import *
-from utils.funcs import format_as_column
+from linkbot.utils.misc import format_as_column
+from linkbot.utils.cmd_utils import *
 
 
 @command(
