@@ -50,8 +50,8 @@ def split_message(msgstr, maxlength=2000):
             split_index = msgstr.rfind(' ', 0, maxlength)
             if split_index == -1:
                 split_index = maxlength
-        msgstr = msgstr[split_index:]
         yield msgstr[:split_index]
+        msgstr = msgstr[split_index:]
     yield msgstr
 
 

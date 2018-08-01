@@ -1,8 +1,8 @@
 import os
 import threading
-
 import git
-from linkbot.commands.Logout import logout
+
+from linkbot.commands.Logout import restart
 from linkbot.utils.cmd_utils import *
 
 
@@ -37,6 +37,5 @@ async def update(cmd: Command):
             raise CommandError(
                 cmd, "There are unpushed changes in the local repository. Use 'update force' to force an overwrite.")
     logging.info("Pull complete.")
-    await cmd.channel.send("Update complete. Restarting...")
-    bot.restart = True
-    logout(cmd)
+    await send_success(cmd.message)
+    restart()

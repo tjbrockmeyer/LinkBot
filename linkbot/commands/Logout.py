@@ -2,7 +2,7 @@ from linkbot.utils.cmd_utils import *
 
 
 @command(
-    ["{c}"], "", [],
+    [], "", [],
     aliases=['logoff'],
     show_in_help=False
 )
@@ -14,7 +14,7 @@ async def logout(cmd: Command):
 
 
 @command(
-    ["{c}"], "", [],
+    [], "", [],
     aliases=['reload', 'reboot'],
     show_in_help=False
 )
@@ -22,3 +22,15 @@ async def logout(cmd: Command):
 async def restart(cmd: Command):
     bot.restart = True
     await logout(cmd)
+
+
+@command(
+    [], "", [],
+    show_in_help=False
+)
+@restrict(OWNER_ONLY)
+async def debugcmd(cmd: Command):
+    from linkbot.utils.misc import send_split_message
+    string = "l" * 2100
+    logging.info(string)
+    await send_split_message(bot.owner, string)
