@@ -72,32 +72,36 @@ def create_config(filepath):
 # user settings on discord, then right click yourself and copy your ID.,
 ownerDiscordId=
 
-# Information regarding the bot.,
-# These are all found on your discord developer page: https://discordapp.com/developers/applications,
-# Select your bot, and under 'General Information', botClientId and botClientSecret and be found.,
-# Under the 'Bot' tab, botToken can be found.,
-botToken=
-botClientId=
-botClientSecret=
-
-# Key for accessing Riot Games' API.,
-riotApiKey=
-# Key for accessing Google's API (Image search and YouTube search).,
-googleApiKey=
-
-# Information that is required in order to access the postgresql database.
-# Where the postgres server is hosted.
-dbhost=
-# The name of the database to use.
-dbname=
-# User/pass to log into postgres as. Should have owner rights to the database.
-dbuser=
-dbpassword=
-
 # Prefix for using commands with this bot.,
 # Preceed any command being issued to the bot with this prefix.,
 # commands being sent of a DM to the bot do not require this prefix.,
 # Default (with no quotes): \"link.\"
 prefix=link.
 
-debug=False""")
+debug=False
+
+# Information regarding the bot.,
+# These are all found on your discord developer page: https://discordapp.com/developers/applications,
+# Select your bot, and under 'General Information', clientId and clientSecret and be found.
+# Under the 'Bot' tab, botToken can be found.
+[bot]
+token=
+clientId=
+clientSecret=
+
+[apikey]
+# Key for accessing Riot Games' API.,
+google=
+# Key for accessing Google's API (Image search and YouTube search).,
+riotgames=
+
+# Information that is required in order to access the postgresql database.
+[database]
+# Where the postgres server is hosted.
+hostname=
+# The name of the database to use.
+name=
+# User/pass to log into postgres as. Should have owner rights to the database.
+user=
+password=
+""")
