@@ -2,6 +2,7 @@
 import os
 import json
 from functools import reduce
+import discord
 
 
 DATA_DIR = 'data/'

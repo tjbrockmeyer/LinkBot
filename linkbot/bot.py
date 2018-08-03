@@ -187,14 +187,14 @@ async def on_error(event_name, *args, **kwargs):
         if etype is CommandSyntaxError:
             # TODO: subcmd = e.cmd.message.content[:e.cmd.message.content.find(e.cmd.argstr)].strip()
             await ch.send("{} {} Try `{}help {}` for help on how to use `{}`."
-                          .format(emoji.warning, e, bot.prefix, e.cmd.command_arg, e.cmd.command_arg))
+                          .format(emoji.Symbol.warning, e, bot.prefix, e.cmd.command_arg, e.cmd.command_arg))
         elif etype is CommandPermissionError:
-            await ch.send("{} {}".format(emoji.no_entry, e))
+            await ch.send("{} {}".format(emoji.Symbol.no_entry, e))
         elif etype is DeveloperError:
-            await ch.send("{} {}".format(emoji.exclamation, e.public_reason))
+            await ch.send("{} {}".format(emoji.Symbol.exclamation, e.public_reason))
             await _send_traceback(fmt_exc)
         elif etype is CommandError:
-            await ch.send("{} {}".format(emoji.x, e))
+            await ch.send("{} {}".format(emoji.Symbol.x, e))
     else:
         await _send_traceback(fmt_exc)
 

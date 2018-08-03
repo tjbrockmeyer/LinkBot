@@ -59,7 +59,7 @@ async def admin_add(cmd):
     with db.connect() as (conn, cur):
         mentions = [m.id for m in cmd.message.mentions] + [m.id for r in cmd.message.role_mentions for m in r.members]
         values = ','.join(cur.mogrify('(%s,%s)', (cmd.guild.id, m)) for m in mentions)
-        query = 'INSERT INTO admins (server_id, user_id) VALUES {} ON CONFLICT DO NOTHING;'.format(values)
+        query = f'INSERT INTO admins (server_id, user_id) VALUES {values} ON CONFLICT DO NOTHING;'
         cur.execute(query)
         conn.commit()
     await send_success(cmd.message)
@@ -72,10 +72,6 @@ async def admin_remove(cmd):
 
     with db.connect() as (conn, cur):
         mentions = [m.id for m in cmd.message.mentions] + [m.id for r in cmd.message.role_mentions for m in r.members]
-        cur.execute(
-            """
-            DELETE FROM admins 
-            WHERE server_id = %s AND user_id IN %s;
-            """, [cmd.guild.id, tuple(mentions)])
+        cur.execute("DELETE FROM admins WHERE server_id = %s AND user_id IN %s;", [cmd.guild.id, tuple(mentions)])
         conn.commit()
     await send_success(cmd.message)
