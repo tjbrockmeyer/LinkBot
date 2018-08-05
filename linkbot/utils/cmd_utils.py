@@ -20,23 +20,23 @@ def restrict(conditions, reason=''):
     def decorator(func):
         @wraps(func)
         async def wrapper(cmd, *args, **kwargs):
-            if DISABLE & conditions != 0:
+            if DISABLE & conditions:
                 raise CommandPermissionError(
                     cmd, "`{}` is disabled. {}"
-                         .format(_usrepl(func.__name__), "Reason: {}.".format(reason) if reason != '' else ''))
-            elif OWNER_ONLY & conditions != 0 and not is_admin(cmd.author):
+                         .format(_usrepl(func.__name__), "Reason: {}.".format(reason) if reason else ''))
+            elif OWNER_ONLY & conditions and not is_admin(cmd.author):
                 raise CommandPermissionError(
                     cmd, "`{}` can only be used by the bot's owner: {}"
                          .format(_usrepl(func.__name__), bot.owner))
-            elif ADMIN_ONLY & conditions != 0 and not is_admin(cmd.author):
+            elif ADMIN_ONLY & conditions and not is_admin(cmd.author):
                 raise CommandPermissionError(
                     cmd, "`{}` can only be used by registered adnims. See `{}admin list`"
                          .format(_usrepl(func.__name__), bot.prefix))
-            elif SERVER_ONLY & conditions != 0 and cmd.guild is None:
+            elif SERVER_ONLY & conditions and cmd.guild is None:
                 raise CommandPermissionError(
                     cmd, "`{}` can only be used in a server."
                          .format(_usrepl(func.__name__)))
-            elif DM_ONLY & conditions != 0 and not cmd.is_dm:
+            elif DM_ONLY & conditions and not cmd.is_dm:
                 raise CommandPermissionError(
                     cmd, "`{}` can only be used in a direct message."
                          .format(_usrepl(func.__name__)))

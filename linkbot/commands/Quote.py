@@ -2,8 +2,8 @@
 import random
 import re
 
-from linkbot.utils.misc import send_split_message
 from linkbot.utils.cmd_utils import *
+import linkbot.utils.menu as menu
 
 
 @command(
@@ -63,8 +63,10 @@ async def quote_list(cmd):
             if not result:
                 raise CommandError(cmd, f"I don't know any quotes from {author}.")
             result = sorted(result, key=lambda x: x[0])
-            await send_split_message(cmd.channel, f"Quotes from {author}:\n  " + "\n  ".join(
-                [f"`{q_id}:` {text}" for (q_id, text) in result]))
+            await cmd.channel.send(embed=discord.Embed(
+                title=f"Quotes from {author}",
+                description="\n".join([f"`{q_id}:`\n{_nlrepl(text)}" for (q_id, text) in result])
+            ))
         else:
             cur.execute("SELECT id, author, quote FROM quotes WHERE server_id = %s;",
                         [cmd.guild.id])
@@ -72,8 +74,8 @@ async def quote_list(cmd):
             if not result:
                 raise CommandError(cmd, "I don't know any quotes from this server.")
             result = sorted(result, key=lambda x: x[0])
-            await send_split_message(cmd.channel, "\n".join(
-                [f"**{q_id}:** {_nlrepl(text)}    -{author}" for (q_id, author, text) in result]))
+            items = [f"**{q_id}:** {_nlrepl(text)}    -{author}" for (q_id, author, text) in result]
+            await menu.send_list(cmd.channel, items, title="Quotes for this Server")
 
 
 async def quote_random(cmd):

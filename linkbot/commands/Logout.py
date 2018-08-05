@@ -25,7 +25,7 @@ async def dbg(cmd: Command):
         await abc()
 
 async def abc():
-    import linkbot.utils.dm_menu as dmm
+    import linkbot.utils.menu as dmm
     import linkbot.utils.emoji as emoji
 
     page = 0
@@ -69,7 +69,7 @@ async def abc():
     await dmm.send(bot.owner, dmm.Menu(embed=build_embed, options=build_options))
 
 async def xyz():
-    import linkbot.utils.dm_menu as dmm
+    import linkbot.utils.menu as dmm
     import linkbot.utils.emoji as emoji
 
     user_settings = dmm.Menu()

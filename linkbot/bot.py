@@ -4,7 +4,6 @@ import sys
 import traceback
 from functools import wraps, reduce
 from importlib import import_module
-
 import discord
 
 import GoogleAPI
@@ -14,7 +13,7 @@ from linkbot.utils.ini import IniIO
 from linkbot.utils import emoji
 import linkbot.utils.database as db
 from linkbot.utils.command import Command
-from linkbot.utils.misc import load_json, create_config, split_message
+from linkbot.utils.misc import create_config, split_message
 
 DATA_FOLDER = 'data/'
 CONFIG_FILE = 'config.ini'
@@ -32,24 +31,9 @@ class LinkBot:
             raise InitializationError("Config has been created. Fill out the required information before continuing.")
 
         self.restart = False
-        self.paused = False
 
-        self.lolgame_region = 'na'
         self.commands = {}
         self.events = {}
-        self.data = load_json(DATABASE_FILE)
-        # { serverID: {
-        #       "admins" : [ userID, ... ],
-        #       "birthdays" : { name : birthday, ...},
-        #       "quotes" : [ ( text, author ), ... ]
-        # }
-
-        # All server ids are stored as strings by the json module.
-        # Thus, they must get converted into integers here before they can be used with discord.py.
-        records = [(key, val) for (key, val) in self.data.items()]
-        for (key, val) in records:
-            self.data[int(key)] = val
-            del self.data[key]
 
         options = IniIO.load(CONFIG_FILE)
         self.owner_id = options.get_int('ownerDiscordId', default=None)
@@ -74,7 +58,6 @@ class LinkBot:
             raise InitializationError("'prefix' must be specified in {} for proper functionality."
                                       .format(CONFIG_FILE))
 
-
     def run(self):
         from pathlib import Path
         if os.path.isfile('INSTANCE'):
@@ -97,6 +80,7 @@ bot = LinkBot()
 
 def event(func):
     e = func.__name__[3:]
+
     @client.event
     @wraps(func)
     async def wrapper(*args, **kwargs):
@@ -163,17 +147,16 @@ async def on_guild_remove(guild):
 
 @event
 async def on_message(message):
-    if message.author.id != client.user.id:
+    if not message.author.bot:
         logging.info("Received a message from " + message.author.name)
         cmd = Command(bot, message)
 
         # if the message has the prefix or the channel is a DM, then the message is targeted at the bot.
         if cmd.has_prefix or cmd.is_dm:
-            if not bot.paused or (bot.paused and cmd.command_arg.lower() == 'unpause'):
-                if cmd.is_valid:
-                    await cmd.run()
-                else:
-                    raise CommandError(cmd, '"{}" is not a valid command.'.format(cmd.command_arg))
+            if cmd.is_valid:
+                await cmd.run()
+            else:
+                raise CommandError(cmd, '"{}" is not a valid command.'.format(cmd.command_arg))
 
 
 @client.event
@@ -203,7 +186,6 @@ async def _send_traceback(tb):
     logging.error(tb)
     for msg in split_message(tb, 1994):
         await bot.owner.send("```{}```".format(msg))
-
 
 
 # Database setup and test.

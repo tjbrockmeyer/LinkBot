@@ -11,12 +11,16 @@ from linkbot.utils.cmd_utils import *
          "Looks up and posts information in the chat about The Booty Toucher's league of legends game."),
         ("{c} thebootytoucher", "Summoner names are not case sensitive, nor are the spaces mandatory."),
         ("{c} thebootytoucher, kr",
-         "Will look on the Korean servers for the player's game. You can specify any region, but you'll need to know the region ID yourself.")
+         "Will look on the Korean servers for the player's game. You can specify any region, "
+         "but you'll need to know the region ID yourself.")
     ]
 )
 @restrict(0)
 @require_args(1)
 async def lolgame(cmd: Command):
+    if not bot.riotClient:
+        raise CommandPermissionError(
+            cmd, "A RiotGames API Key has not been specified. This command is currently disabled.")
     args = cmd.argstr.split(',')
 
     # get args

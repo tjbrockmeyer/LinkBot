@@ -28,13 +28,13 @@ CREATE TABLE quotes (
     primary key (server_id, id)
 );
 
+-- INDEPENDENT TABLES --
+
 CREATE TABLE reminders (
     remindee_id             bigint      not null,
     remind_at               timestamp   not null,
     reason                  text
 );
-
--- INDEPENDENT TABLES --
 
 CREATE TABLE suggestions (
     id                      serial      primary key,

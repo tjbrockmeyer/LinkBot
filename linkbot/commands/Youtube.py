@@ -13,6 +13,9 @@ from linkbot.utils.cmd_utils import *
 )
 @require_args(1)
 async def youtube(cmd: Command):
+    if not bot.googleClient:
+        raise CommandPermissionError(
+            cmd, "A Google API key has not been specified. This command is currently disabled.")
     # get the search results
     try:
         video_list = bot.googleClient.get_video_search_results(cmd.argstr, 1)
