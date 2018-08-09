@@ -79,7 +79,7 @@ token=
 clientId=
 clientSecret=
 
-[apikey]
+[apikeys]
 # Key for accessing Riot Games' API.,
 google=
 # Key for accessing Google's API (Image search and YouTube search).,

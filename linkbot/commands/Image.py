@@ -24,6 +24,11 @@ async def image(cmd: Command):
             public_reason="An error occurred. The quota limit may have been reached.")
 
     # send link to first search result
-    if len(image_list) == 0:
+    if not image_list:
         raise CommandError(cmd, "No results were found.")
-    await cmd.channel.send(image_list[0].url)
+    img = image_list[0]
+    await cmd.channel.send(embed=bot.embed(
+            discord.Color.blurple()
+        ).set_author(name=img.title, url=img.context_url,
+            icon_url="https://cdn4.iconfinder.com/data/icons/new-google-logo-2015/400/new-google-favicon-512.png"
+        ).set_image(url=img.url))

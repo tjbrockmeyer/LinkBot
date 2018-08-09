@@ -48,15 +48,15 @@ def get_help_header():
 async def send_help(dest, helpcmd=None):
     if helpcmd:
         cmdInfo = bot.commands[helpcmd]
-        embed = discord.Embed(title="**__" + cmdInfo.command + "__**",
-                              color=discord.Color.dark_green(),
-                              description=cmdInfo.description)
+        embed = bot.embed(title="**__" + cmdInfo.command + "__**",
+                          color=discord.Color.dark_green(),
+                          description=cmdInfo.description)
         cmdInfo.embed_examples(embed, bot.prefix, cmd_as_code=False)
         await dest.send(embed=embed)
     else:
-        embed = discord.Embed(title="__General Command Help__",
-                              color=discord.Color.dark_green(),
-                              description=get_help_header())
+        embed = bot.embed(title="__General Command Help__",
+                          color=discord.Color.dark_green(),
+                          description=get_help_header())
         for x in sorted(list(set([y for y in bot.commands.values() if y.show_in_help])), key=lambda z: z.command):
             x.embed_syntax(embed, bot.prefix, mk_down='`', title_mk_down='__', sep='\n', inline=True)
         await dest.send(embed=embed)
