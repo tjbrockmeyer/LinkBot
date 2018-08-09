@@ -5,7 +5,7 @@ import os
 
 
 
-@command([], "", [], aliases=['logoff'], show_in_help=False)
+@command( [], "", [], aliases=['logoff'], show_in_help=False)
 @restrict(OWNER_ONLY)
 async def logout(cmd: Command):
     if await menu.send_confirmation(
@@ -33,7 +33,7 @@ async def restart(cmd: Command):
 @command([], "", [], aliases=['upgrade'], show_in_help=False)
 @restrict(OWNER_ONLY)
 async def update(cmd: Command):
-    if debug:
+    if bot.debug:
         raise CommandPermissionError(cmd, "Cannot update in debug mode.")
 
     if await menu.send_confirmation(
