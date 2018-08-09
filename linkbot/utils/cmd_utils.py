@@ -84,10 +84,10 @@ def command(syntax, description, examples, aliases=None, show_in_help=True, help
         @wraps(func)
         async def wrapper(cmd: Command, *args, **kwargs):
             if help_subcommand and len(cmd.args) > 0 and cmd.args[0] == 'help':
-                from linkbot.commands import help
+                from linkbot.commands.Help import send_help
                 cmd.args = [cmd.command_arg]
                 cmd.argstr = cmd.command_arg
-                await help(cmd)
+                await send_help(cmd.channel, cmd.command_arg)
             else:
                 logging.info("Running command: {}".format(func.__name__))
                 await func(cmd, *args, **kwargs)

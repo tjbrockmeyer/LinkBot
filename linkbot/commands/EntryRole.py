@@ -63,4 +63,4 @@ async def entryrole_check_one(member):
         result = cur.fetchone()
     if result:
         role = discord.utils.get(member.guild.roles, id=result[0])
-        await client.add_roles(member, role)
+        await member.add_roles(role)

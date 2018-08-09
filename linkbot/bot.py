@@ -1,64 +1,61 @@
 import logging
 import os
 import sys
+import discord
 import traceback
+from datetime import datetime
 from functools import wraps, reduce
 from importlib import import_module
-import discord
 
 import GoogleAPI
 import RiotAPI
+import linkbot.utils.database as db
 from linkbot.errors import *
 from linkbot.utils.ini import IniIO
 from linkbot.utils import emoji
-import linkbot.utils.database as db
 from linkbot.utils.command import Command
 from linkbot.utils.misc import create_config, split_message
-
-DATA_FOLDER = 'data/'
-CONFIG_FILE = 'config.ini'
-SUGGESTION_FILE = DATA_FOLDER + 'suggestions.txt'
-DATABASE_FILE = DATA_FOLDER + 'database.json'
-REMINDERS_FILE = DATA_FOLDER + 'reminders.json'
-client = discord.Client()
 
 
 class LinkBot:
     def __init__(self):
         # If the config file doesn't exist, create it with the defaults.
-        if not os.path.isfile(CONFIG_FILE):
-            create_config(CONFIG_FILE)
+        if not os.path.isfile(config_ini):
+            create_config(config_ini)
             raise InitializationError("Config has been created. Fill out the required information before continuing.")
 
         self.restart = False
-
         self.commands = {}
         self.events = {}
 
-        options = IniIO.load(CONFIG_FILE)
-        self.owner_id = options.get_int('ownerDiscordId', default=None)
+        options = IniIO.load(config_ini)
+        self.owner_id = options.get_int('ownerDiscordId')
         self.owner = None
-        self.token = options.get_str('bot.token', default=None)
-        self.client_id = options.get_int('bot.clientId', default=None)
-        self.client_secret = options.get_str('bot.clientSecret', default=None)
-        self.prefix = options.get_str('prefix', default=None)
-        google_apikey = options.get_str('apikeys.google', default=None)
-        self.googleClient = GoogleAPI.Client(google_apikey) if google_apikey is not None else None
-        riot_apikey = options.get_str('apikeys.riotgames', default=None)
-        self.riotClient = RiotAPI.Client(riot_apikey) if riot_apikey is not None else None
+        self.token = options.get_str('bot.token')
+        self.client_id = options.get_int('bot.clientId')
+        self.client_secret = options.get_str('bot.clientSecret')
+        self.prefix = options.get_str('prefix')
         self.debug = options.get_bool('debug')
 
-        if self.token is None or self.client_id is None or self.client_secret is None:
-            raise InitializationError("'token', 'clientId', and 'clientSecret' must be specified in {}."
-                                      .format(CONFIG_FILE))
-        if self.owner_id is None:
-            raise InitializationError("'ownerDiscordId' must be specified with your Discord user ID in {}."
-                                      .format(CONFIG_FILE))
-        if self.prefix is None:
-            raise InitializationError("'prefix' must be specified in {} for proper functionality."
-                                      .format(CONFIG_FILE))
+        google_apikey = options.get_str('apikeys.google')
+        self.googleClient = GoogleAPI.Client(google_apikey) if google_apikey else None
+        riot_apikey = options.get_str('apikeys.riotgames', default=None)
+        self.riotClient = RiotAPI.Client(riot_apikey) if riot_apikey is not None else None
+
+        if not self.token or not self.client_id or not self.client_secret:
+            raise InitializationError(
+                f"'token', 'clientId', and 'clientSecret' must be specified in {config_ini}.")
+        if not self.owner_id:
+            raise InitializationError(
+                f"'ownerDiscordId' must be specified with your Discord user ID in {config_ini}.")
+        if not self.prefix:
+            raise InitializationError(f"'prefix' must be specified in {config_ini} for proper functionality.")
 
     def run(self):
+        if bot.debug:
+            client.run(self.token)
+            return
+
         from pathlib import Path
         if os.path.isfile('INSTANCE'):
             raise InitializationError("Only one instance may be running at a time.")
@@ -74,7 +71,15 @@ class LinkBot:
             logging.info("Restarting...")
             os.execl(sys.executable, sys.executable, *sys.argv)
 
+    @staticmethod
+    def embed(c: discord.Color, ft: str="", **kwargs):
+        return discord.Embed(color=c, **kwargs) \
+            .set_footer(text=ft if ft else client.user.display_name, icon_url=client.user.avatar_url)
 
+
+cmd_dir = 'linkbot/commands/'
+config_ini = 'config.ini'
+client = discord.Client()
 bot = LinkBot()
 
 
@@ -94,16 +99,6 @@ def event(func):
 
 @event
 async def on_ready():
-
-    # load voice module
-    # discord.opus.load_opus('opus')
-    # if not discord.opus.is_loaded():
-    #    await logging.info('WARNING:\tOpus failed to load. Voice is disabled for this session.')
-
-    # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-    # Print out various information about the bot for this session.
-    # :::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-
     bot.owner = client.get_user(bot.owner_id)
     if bot.owner is None:
         raise InitializationError("Bot owner could not be found in any servers that the bot is a part of.")
@@ -112,7 +107,7 @@ async def on_ready():
         await client.change_presence(activity=discord.Game('DEVELOPMENT'))
         logging.info('Currently running in DEBUG mode. Edit source with DEBUG = False to deactivate.')
     else:
-        await client.change_presence(activity=discord.Game('{}help'.format(bot.prefix)))
+        await client.change_presence(activity=discord.Game(f'{bot.prefix}help'))
     logging.info('LinkBot is ready.')
 
 
@@ -136,12 +131,7 @@ async def on_guild_join(guild):
 @event
 async def on_guild_remove(guild):
     with db.connect() as (conn, cur):
-        cur.execute(
-            """
-            DELETE FROM servers
-            WHERE server_id = %s
-            CASCADE;
-            """, [guild.id])
+        cur.execute("DELETE FROM servers WHERE server_id = %s CASCADE;", [guild.id])
         conn.commit()
 
 
@@ -156,28 +146,54 @@ async def on_message(message):
             if cmd.is_valid:
                 await cmd.run()
             else:
-                raise CommandError(cmd, '"{}" is not a valid command.'.format(cmd.command_arg))
+                raise CommandError(cmd, f'"{cmd.command_arg}" is not a valid command.')
 
 
 @client.event
 async def on_error(event_name, *args, **kwargs):
     etype, e, tb = sys.exc_info()
-    fmt_exc = reduce(lambda x, y: "{}{}".format(x, y), traceback.format_exception(etype, e, tb), "")
+    fmt_exc = reduce(lambda x, y: f"{x}{y}", traceback.format_exception(etype, e, tb), "")
     if etype is InitializationError:
         raise e
     if issubclass(etype, CommandError):
         ch = e.cmd.channel
+
         if etype is CommandSyntaxError:
-            # TODO: subcmd = e.cmd.message.content[:e.cmd.message.content.find(e.cmd.argstr)].strip()
-            await ch.send("{} {} Try `{}help {}` for help on how to use `{}`."
-                          .format(emoji.Symbol.warning, e, bot.prefix, e.cmd.command_arg, e.cmd.command_arg))
+            import linkbot.utils.menu as menu
+            from linkbot.commands.Help import send_help
+            async def req_help(_r, _u):
+                await send_help(ch, e.cmd.command_arg)
+            m = menu.Menu(
+                embed=bot.embed(
+                    discord.Color.red(),
+                    title=f"{emoji.Symbol.warning} Syntax Error {emoji.Symbol.warning}",
+                    description=f"{e}\n\n"
+                                f"For more help, Try `{bot.prefix}help {e.cmd.command_arg}`,\n"
+                                f"or react with {emoji.Symbol.grey_question}"),
+                options=[
+                    menu.Option(emoji.Symbol.grey_question, "", func=req_help, close=True)],
+                show_navigation=False,
+                destroy_on_close=False)
+            await menu.send(ch, m, only_accept=e.cmd.author)
+
         elif etype is CommandPermissionError:
-            await ch.send("{} {}".format(emoji.Symbol.no_entry, e))
+            await ch.send(embed=bot.embed(
+                discord.Color.red(),
+                title=f"{emoji.Symbol.no_entry} Permission Error {emoji.Symbol.no_entry}",
+                description=str(e)))
+
         elif etype is DeveloperError:
-            await ch.send("{} {}".format(emoji.Symbol.exclamation, e.public_reason))
+            await ch.send(embed=bot.embed(
+                discord.Color.red(),
+                title=f"{emoji.Symbol.exclamation} Unknown Error {emoji.Symbol.exclamation}",
+                description=e.public_reason))
             await _send_traceback(fmt_exc)
+
         elif etype is CommandError:
-            await ch.send("{} {}".format(emoji.Symbol.x, e))
+            await ch.send(embed=bot.embed(
+                discord.Color.red(),
+                title=f"{emoji.Symbol.x} Error {emoji.Symbol.x}",
+                description=str(e)))
     else:
         await _send_traceback(fmt_exc)
 
@@ -185,14 +201,13 @@ async def on_error(event_name, *args, **kwargs):
 async def _send_traceback(tb):
     logging.error(tb)
     for msg in split_message(tb, 1994):
-        await bot.owner.send("```{}```".format(msg))
+        await bot.owner.send(f"```{msg}```")
 
 
 # Database setup and test.
-if not db.setup(CONFIG_FILE):
+if not db.setup(config_ini):
     raise InitializationError(
-        "Failed to connect to the database. Be sure that your database settings in {} have been set up properly."
-            .format(CONFIG_FILE))
+        f"Failed to connect to the database. Be sure that your database settings in {config_ini} are properly set up.")
 try:
     with db.connect():
         pass
@@ -200,7 +215,6 @@ except:
     raise InitializationError("Failed to connect to the database. Is the hostname correct, and is the database online?")
 
 # Import all commands.
-cmd_dir = 'linkbot/commands/'
 for file in [cmd_dir + f for f in os.listdir(cmd_dir)]:
     if os.path.isfile(file) and not file.endswith('__init__.py'):
         package = file.replace('/', '.')[:-3]

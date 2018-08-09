@@ -13,7 +13,7 @@ class IniIO(dict):
         return self[op]
 
     def bool(self, op):
-        return self[op] in IniIO.trues
+        return self[op].lower() in IniIO.trues
 
     def get_int(self, op, default=0):
         try:

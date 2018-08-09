@@ -11,6 +11,7 @@ class Symbol:
     no_entry = '⛔'
     exclamation = '❗'
     warning = '⚠'
+    grey_question = '❔'
 
     arrow_backward = "◀"
     arrow_forward = "▶"

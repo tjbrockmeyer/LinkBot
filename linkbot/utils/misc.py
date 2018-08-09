@@ -2,15 +2,6 @@
 import os
 import json
 from functools import reduce
-import discord
-
-
-DATA_DIR = 'data/'
-
-
-def create_data_dir():
-    if not os.path.isdir(DATA_DIR):
-        os.mkdir(DATA_DIR)
 
 
 def save_json(filepath, data, pretty=False):

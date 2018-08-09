@@ -50,7 +50,8 @@ async def quote_id(cmd, qid):
     if not result:
         raise CommandSyntaxError(cmd, f'`{qid}` is not a valid quote ID.')
     author, text = result[0]
-    await cmd.channel.send(f'{_nlrepl(text)}\n\t\t\t-{author}')
+    await cmd.channel.send(embed=bot.embed(
+        discord.Color.blue(), title=f"{qid}: {author}", description=_nlrepl(text)))
 
 
 async def quote_list(cmd):
@@ -63,8 +64,8 @@ async def quote_list(cmd):
             if not result:
                 raise CommandError(cmd, f"I don't know any quotes from {author}.")
             result = sorted(result, key=lambda x: x[0])
-            await cmd.channel.send(embed=discord.Embed(
-                title=f"Quotes from {author}",
+            await cmd.channel.send(embed=bot.embed(
+                discord.Color.blue(), title=f"Quotes from {author}",
                 description="\n".join([f"`{q_id}:`\n{_nlrepl(text)}" for (q_id, text) in result])
             ))
         else:
@@ -74,8 +75,10 @@ async def quote_list(cmd):
             if not result:
                 raise CommandError(cmd, "I don't know any quotes from this server.")
             result = sorted(result, key=lambda x: x[0])
+
             items = [f"**{q_id}:** {_nlrepl(text)}    -{author}" for (q_id, author, text) in result]
-            await menu.send_list(cmd.channel, items, title="Quotes for this Server")
+            build_embed = lambda: bot.embed(discord.Color.blue())
+            await menu.send_list(cmd.channel, items, build_embed, "Quotes for this Server")
 
 
 async def quote_random(cmd):
@@ -89,7 +92,8 @@ async def quote_random(cmd):
             if not result:
                 raise CommandError(cmd, f"I don't know any quotes from {author}.")
             (q_id, text) = random.choice(result)
-            await cmd.channel.send(f"`  {q_id}:` {_nlrepl(text)}    -{author}")
+            await cmd.channel.send(embed=bot.embed(
+                discord.Color.blue(), title=f"{q_id}: {author}", description=_nlrepl(text)))
         else:
             cur.execute("SELECT id, author, quote FROM quotes WHERE server_id = %s;",
                         [cmd.guild.id])
@@ -97,7 +101,8 @@ async def quote_random(cmd):
             if not result:
                 raise CommandError(cmd, "I don't know any quotes from this server.")
             (q_id, author, text) = random.choice(result)
-            await cmd.channel.send(f"`  {q_id}:` {_nlrepl(text)}    -{author}")
+            await cmd.channel.send(embed=bot.embed(
+                discord.Color.blue(), title=f"{q_id}: {author}", description=_nlrepl(text)))
 
 
 @restrict(ADMIN_ONLY)
@@ -111,8 +116,9 @@ async def quote_add(cmd):
         raise CommandSyntaxError(cmd, 'To add a quote, include a quote followed by -Author\'s Name.')
     author, text = (q_args[match.start() + 2:], q_args[:match.start()].replace('\n', '\\n'))
 
+    # TODO: not correctly identifying which id to use next.
     with db.connect() as (conn, cur):
-        cur.execute("SELECT id FROM quotes WHERE server_id = %s;", [cmd.guild.id])
+        cur.execute("SELECT id FROM quotes WHERE server_id = %s ORDER BY id;", [cmd.guild.id])
         result = [r[0] for r in cur.fetchall()]
         for (i, j) in enumerate(result):
             if i != j:
@@ -123,8 +129,8 @@ async def quote_add(cmd):
         cur.execute(f"INSERT INTO quotes (server_id, id, author, quote) VALUES (%s, %s, %s, %s);",
                     [cmd.guild.id, q_id, author, text])
         conn.commit()
-    await cmd.channel.send(
-        f"Added quote with ID {q_id}: \n{_nlrepl(text)} -{author}")
+        await cmd.channel.send(embed=bot.embed(
+            discord.Color.green(), title=f"Added Quote with ID: {q_id}", description=_nlrepl(text)))
 
 
 @restrict(ADMIN_ONLY)
@@ -146,7 +152,8 @@ async def quote_remove(cmd):
         (author, text) = result
         cur.execute("DELETE FROM quotes WHERE server_id = %s AND id = %s;", [cmd.guild.id, q_id])
         conn.commit()
-    await cmd.channel.send(f"Quote removed: ~~{_nlrepl(text)}~~\n\t\t\t-~~{author}~~")
+        await cmd.channel.send(embed=bot.embed(
+            discord.Color.blue(), title=f"Quote by {author} removed", description=f"~~{_nlrepl(text)}~~"))
 
 
 def _nlrepl(q):

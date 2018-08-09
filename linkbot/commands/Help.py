@@ -3,6 +3,7 @@ import discord
 from linkbot.utils.cmd_utils import *
 
 
+
 @command(
     ['{c} [here] [command]'],
     'Pastes help into chat.',
@@ -13,11 +14,6 @@ from linkbot.utils.cmd_utils import *
     ]
 )
 async def help(cmd: Command):
-    help_header = '\n' \
-       "Argument syntax:  `<mandatory> [optional]`\n" \
-       "Command prefix: '{prefix}'\n" \
-       "Use `{help_syntax}` to get more info on a particular command, for example: 'help quote'" \
-        .format(prefix=bot.prefix, help_syntax=cmd.info.get_syntax_with_format(bot.prefix))
 
     here = len(cmd.args) > 0 and cmd.args[0].lower() == "here"
 
@@ -31,24 +27,39 @@ async def help(cmd: Command):
 
     # if "help [here] command"
     if helpcmd is not None:
-
         # Check for bad command.
         if helpcmd not in bot.commands:
             raise CommandSyntaxError(cmd, helpcmd + ' is not a valid command.')
-
-        cmdInfo = bot.commands[helpcmd]
-        embed = discord.Embed(title="**__" + cmdInfo.command + "__**",
-                              color=discord.Color(0x127430),
-                              description=cmdInfo.description)
-        cmdInfo.embed_examples(embed, bot.prefix, cmd_as_code=False)
-        await cmd.author.send(embed=embed) if not here else await cmd.channel.send(embed=embed)
+        await send_help(cmd.channel if here else cmd.author, cmd.command_arg)
 
     # if "help [here]"
     else:
+        await send_help(cmd.channel if here else cmd.author)
+
+
+def get_help_header():
+    return '\n' \
+       "Argument syntax:  `<mandatory> [optional]`\n" \
+       "Command prefix: '{prefix}'\n" \
+       "Use `{help_syntax}` to get more info on a particular command, for example: 'help quote'" \
+        .format(prefix=bot.prefix, help_syntax=bot.commands['help'].get_syntax_with_format(bot.prefix))
+
+
+async def send_help(dest, helpcmd=None):
+    if helpcmd:
+        cmdInfo = bot.commands[helpcmd]
+        embed = discord.Embed(title="**__" + cmdInfo.command + "__**",
+                              color=discord.Color.dark_green(),
+                              description=cmdInfo.description)
+        cmdInfo.embed_examples(embed, bot.prefix, cmd_as_code=False)
+        await dest.send(embed=embed)
+    else:
         embed = discord.Embed(title="__General Command Help__",
-                              color=discord.Color(0x127430),
-                              description=help_header)
+                              color=discord.Color.dark_green(),
+                              description=get_help_header())
         for x in sorted(list(set([y for y in bot.commands.values() if y.show_in_help])), key=lambda z: z.command):
             x.embed_syntax(embed, bot.prefix, mk_down='`', title_mk_down='__', sep='\n', inline=True)
-        await cmd.author.send(embed=embed) if not here else await cmd.channel.send(embed=embed)
+        await dest.send(embed=embed)
+
+
 
