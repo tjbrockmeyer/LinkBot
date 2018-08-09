@@ -44,7 +44,7 @@ class Option:
 
 async def send_confirmation(dest, embed, *, timeout=30, destroy_on_close=True, only_accept=None):
 
-    def on_yes():
+    def on_yes(r, u):
         nonlocal ret
         ret = True
 
