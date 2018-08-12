@@ -29,6 +29,7 @@ async def image(cmd: Command):
     img = image_list[0]
     await cmd.channel.send(embed=bot.embed(
             discord.Color.blurple()
-        ).set_author(name=img.title, url=img.context_url,
+        ).set_author(
+            name=img.title or "Image", url=img.context_url,
             icon_url="https://cdn4.iconfinder.com/data/icons/new-google-logo-2015/400/new-google-favicon-512.png"
         ).set_image(url=img.url))

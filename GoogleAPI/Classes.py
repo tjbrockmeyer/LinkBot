@@ -19,12 +19,13 @@ class Video:
         self.date = snippet['publishedAt']
         self.thumbnails = {k: Thumbnail(v) for k, v in snippet['thumbnails'].items()}
 
+
 class Image:
     def __init__(self, data):
         img = data['image']
         self.url = data['link']
-        self.title = data['title']
-        self.context_url = img['contextLink']
+        self.title = data.get('title')
+        self.context_url = img.get('contextLink')
         self.height = img['height']
         self.width = img['width']
         self.thumbnail_url = img['thumbnailLink']
