@@ -1,6 +1,6 @@
 
 
-class IniIO(dict):
+class Ini(dict):
     trues = ['1', 't', 'true']
 
     def int(self, op):
@@ -13,7 +13,7 @@ class IniIO(dict):
         return self[op]
 
     def bool(self, op):
-        return self[op].lower() in IniIO.trues
+        return self[op].lower() in Ini.trues
 
     def get_int(self, op, default=0):
         try:
@@ -41,7 +41,7 @@ class IniIO(dict):
 
     @staticmethod
     def load(filepath):
-        options = IniIO()
+        options = Ini()
         section = None
         with open(filepath, 'r') as f:
             for (i, line) in enumerate(f):

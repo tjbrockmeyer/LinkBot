@@ -75,7 +75,7 @@ async def remind(cmd: Command):
     if delay < 85000:
         outstring = remind_at.strftime("I'll remind you at %r")
     else:
-        outstring = remind_at.strftime("I'll remind you on %a, %b %-m at %r")
+        outstring = remind_at.strftime("I'll remind you on %a, %b %e at %r")
 
     # Include reason in the notification if it was provided.
     if reason != '':

@@ -4,6 +4,7 @@ import re
 
 from linkbot.utils.cmd_utils import *
 import linkbot.utils.menu as menu
+from typing import Iterable, List, Any
 
 
 @command(
@@ -42,28 +43,26 @@ async def quote(cmd: Command):
         raise CommandSyntaxError(cmd, 'Invalid sub-command.')
 
 
-async def quote_id(cmd, qid):
-    # check that quote id is within bounds
+async def quote_id(cmd: Command, q_id: int):
     with db.connect() as (conn, cur):
-        cur.execute("SELECT author, quote FROM quotes WHERE server_id = %s AND id = %s;", [cmd.guild.id, qid])
-        result = cur.fetchone()
+        cur.execute("SELECT author, quote FROM quotes WHERE server_id = %s AND id = %s;", [cmd.guild.id, q_id])
+        result: Tuple[str, str] = cur.fetchone()
     if not result:
-        raise CommandSyntaxError(cmd, f'`{qid}` is not a valid quote ID.')
-    author, text = result[0]
+        raise CommandSyntaxError(cmd, f'`{q_id}` is not a valid quote ID.')
+    author, text = result
     await cmd.channel.send(embed=bot.embed(
-        discord.Color.blue(), title=f"{qid}: {author}", description=_nlrepl(text)))
+        discord.Color.blue(), title=f"{q_id}: {author}", description=_nlrepl(text)))
 
 
-async def quote_list(cmd):
+async def quote_list(cmd: Command):
     with db.connect() as (conn, cur):
         if cmd.args:
             author = cmd.args[0]
             cur.execute("SELECT id, quote FROM quotes WHERE server_id = %s AND author = %s;",
                         [cmd.guild.id, author])
-            result = cur.fetchall()
+            result: List[Tuple[int, str]] = sorted(cur.fetchall(), key=lambda x: x[0])
             if not result:
                 raise CommandError(cmd, f"I don't know any quotes from {author}.")
-            result = sorted(result, key=lambda x: x[0])
             await cmd.channel.send(embed=bot.embed(
                 discord.Color.blue(), title=f"Quotes from {author}",
                 description="\n".join([f"`{q_id}:`\n{_nlrepl(text)}" for (q_id, text) in result])
@@ -71,17 +70,15 @@ async def quote_list(cmd):
         else:
             cur.execute("SELECT id, author, quote FROM quotes WHERE server_id = %s;",
                         [cmd.guild.id])
-            result = cur.fetchall()
+            result: List[Tuple[int, str, str]] = sorted(cur.fetchall(), key=lambda x: x[0])
             if not result:
                 raise CommandError(cmd, "I don't know any quotes from this server.")
-            result = sorted(result, key=lambda x: x[0])
 
             items = [f"**{q_id}:** {_nlrepl(text)}    -{author}" for (q_id, author, text) in result]
-            build_embed = lambda: bot.embed(discord.Color.blue())
-            await menu.send_list(cmd.channel, items, build_embed, "Quotes for this Server")
+            await menu.send_list(cmd.channel, items, lambda: bot.embed(discord.Color.blue()), "Quotes for this Server")
 
 
-async def quote_random(cmd):
+async def quote_random(cmd: Command):
     random.seed()
     with db.connect() as (conn, cur):
         if cmd.args:
@@ -107,7 +104,7 @@ async def quote_random(cmd):
 
 @restrict(ADMIN_ONLY)
 @require_args(2)
-async def quote_add(cmd):
+async def quote_add(cmd: Command):
     q_args = cmd.argstr
     match = re.search('( -\w)', q_args)
 
@@ -135,14 +132,11 @@ async def quote_add(cmd):
 
 @restrict(ADMIN_ONLY)
 @require_args(1)
-async def quote_remove(cmd):
-    # ID type-check
+async def quote_remove(cmd: Command):
     try:
         q_id = int(cmd.args[0])
     except TypeError:
         raise CommandSyntaxError(cmd, str(cmd.args[0]) + ' is not a valid quote ID.')
-    except IndexError:
-        raise CommandSyntaxError(cmd, "You must provide a quote ID to remove.")
 
     with db.connect() as (conn, cur):
         cur.execute("SELECT author, quote FROM quotes WHERE server_id = %s AND id = %s;", [cmd.guild.id, q_id])

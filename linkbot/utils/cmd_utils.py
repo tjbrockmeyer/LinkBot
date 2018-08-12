@@ -8,6 +8,7 @@ from linkbot.errors import *
 from linkbot.utils.checks import *
 from linkbot.utils.emoji import send_success
 from linkbot.utils.command import Command, CommandInfo
+from typing import Optional, List, Tuple
 
 DISABLE = 1
 ADMIN_ONLY = 2
@@ -78,23 +79,27 @@ def on_event(event_name):
     return decorator
 
 
-def command(syntax, description, examples, aliases=None, show_in_help=True, help_subcommand=True):
-    aliases = aliases or []
+def command(syntax: List[str], description: str, examples: List[Tuple[str, str]], *,
+            name: str="", aliases: Optional[List[str]]=None,
+            show_in_help: bool=True, help_subcommand: bool=True):
     def decorator(func):
+        a = aliases or []
+        n = name or func.__name__
+
         @wraps(func)
         async def wrapper(cmd: Command, *args, **kwargs):
-            if help_subcommand and len(cmd.args) > 0 and cmd.args[0] == 'help':
+            if help_subcommand and cmd.args and cmd.args[0] == 'help':
                 from linkbot.commands.Help import send_help
                 cmd.args = [cmd.command_arg]
                 cmd.argstr = cmd.command_arg
                 await send_help(cmd.channel, cmd.command_arg)
             else:
-                logging.info("Running command: {}".format(func.__name__))
+                logging.info("Running command: {}".format(n))
                 await func(cmd, *args, **kwargs)
-                logging.info("Command complete: {}".format(func.__name__))
+                logging.info("Command complete: {}".format(n))
 
-        cmd_info = CommandInfo(func.__name__, wrapper, syntax, description, examples, aliases, show_in_help)
-        bot.commands[func.__name__] = cmd_info
+        cmd_info = CommandInfo(n, wrapper, syntax, description, examples, a, show_in_help)
+        bot.commands[n] = cmd_info
         for a in aliases:
             bot.commands[a] = cmd_info
         return wrapper

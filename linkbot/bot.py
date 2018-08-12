@@ -11,7 +11,7 @@ import GoogleAPI
 import RiotAPI
 import linkbot.utils.database as db
 from linkbot.errors import *
-from linkbot.utils.ini import IniIO
+from linkbot.utils.ini import Ini
 from linkbot.utils import emoji
 from linkbot.utils.command import Command
 from linkbot.utils.misc import create_config, split_message
@@ -28,7 +28,7 @@ class LinkBot:
         self.commands = {}
         self.events = {}
 
-        options = IniIO.load(config_ini)
+        options = Ini.load(config_ini)
         self.owner_id = options.get_int('ownerDiscordId')
         self.owner = None
         self.token = options.get_str('bot.token')
@@ -104,10 +104,10 @@ async def on_ready():
         raise InitializationError("Bot owner could not be found in any servers that the bot is a part of.")
     logging.info('Prefix: ' + "'" + bot.prefix + "'")
     if bot.debug:
-        await client.change_presence(activity=discord.Game('DEVELOPMENT'))
+        await client.change_presence(activity=discord.Game(name='Development'))
         logging.info('Currently running in DEBUG mode. Edit source with DEBUG = False to deactivate.')
     else:
-        await client.change_presence(activity=discord.Game(f'{bot.prefix}help'))
+        await client.change_presence(activity=discord.Game(name=f'{bot.prefix}help'))
     logging.info('LinkBot is ready.')
 
 
@@ -150,7 +150,7 @@ async def on_message(message):
 
 
 @client.event
-async def on_error(event_name, *args, **kwargs):
+async def on_error(event_name: str, *args, **kwargs):
     etype, e, tb = sys.exc_info()
     fmt_exc = reduce(lambda x, y: f"{x}{y}", traceback.format_exception(etype, e, tb), "")
     if etype is InitializationError:
@@ -161,6 +161,7 @@ async def on_error(event_name, *args, **kwargs):
         if etype is CommandSyntaxError:
             import linkbot.utils.menu as menu
             from linkbot.commands.Help import send_help
+
             async def req_help(_r, _u):
                 await send_help(ch, e.cmd.command_arg)
             m = menu.Menu(
@@ -170,11 +171,9 @@ async def on_error(event_name, *args, **kwargs):
                     description=f"{e}\n\n"
                                 f"For more help, Try `{bot.prefix}help {e.cmd.command_arg}`,\n"
                                 f"or react with {emoji.Symbol.grey_question}"),
-                options=[
-                    menu.Option(emoji.Symbol.grey_question, "", func=req_help, close=True)],
-                show_navigation=False,
-                destroy_on_close=False)
-            await menu.send(ch, m, only_accept=e.cmd.author)
+                show_navigation=False)\
+                .set_options([menu.Option(emoji.Symbol.grey_question, "", func=req_help, close=True)])
+            await menu.send(ch, m, timeout=30, destroy_on_close=False, only_accept=e.cmd.author)
 
         elif etype is CommandPermissionError:
             await ch.send(embed=bot.embed(
