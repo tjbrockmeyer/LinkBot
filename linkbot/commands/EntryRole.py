@@ -15,10 +15,10 @@ async def entryrole(cmd: Command):
         with db.connect() as (conn, cur):
             cur.execute("SELECT entry_role FROM servers WHERE server_id = %s;", [cmd.guild.id])
             role_id = cur.fetchone()[0]
-            if not role_id:
-                raise CommandError(cmd, 'There is not an entry level role set for this server.')
+        if not role_id:
+            raise CommandError(cmd, 'There is not an entry level role set for this server.')
         role = discord.utils.get(cmd.guild.roles, id=role_id)
-        await cmd.channel.send('Entry level role: `{}`'.format(role))
+        await cmd.channel.send(f'Entry level role: `{role}`')
 
     elif cmd.args[0] == 'set':
         mentions = cmd.message.role_mentions
@@ -47,19 +47,19 @@ async def entryrole(cmd: Command):
 async def entryrole_check_all():
     with db.connect() as (conn, cur):
         cur.execute("SELECT server_id, entry_role FROM servers WHERE entry_role IS NOT NULL;")
-        results = cur.fetchall()
+        results: Tuple[int, int] = cur.fetchall()
     for (guild_id, role_id) in results:
         guild = client.get_guild(guild_id)
         role = discord.utils.get(guild.roles, id=role_id)
         for member in guild.members:
             if len(member.roles) == 1:
-                await member.add_roles(member, role)
+                await member.add_roles(role)
 
 
 @on_event('member_join')
 async def entryrole_check_one(member):
     with db.connect() as (conn, cur):
-        cur.execute("SELECT entry_role FROM servers WHERE server_id = %s", [member.guild.id])
+        cur.execute("SELECT entry_role FROM servers WHERE server_id = %s AND entry_role IS NOT NULL;", [member.guild.id])
         result = cur.fetchone()
     if result:
         role = discord.utils.get(member.guild.roles, id=result[0])

@@ -31,11 +31,7 @@ async def admin(cmd: Command):
 
 async def admin_list(cmd):
     with db.connect() as (conn, cur):
-        cur.execute(
-            """
-            SELECT user_id FROM admins
-            WHERE server_id = %s;
-            """, [cmd.guild.id])
+        cur.execute("SELECT user_id FROM admins WHERE server_id = %s;", [cmd.guild.id])
         admins = [x[0] for x in cur.fetchall()]
 
         # Check for existing admins
@@ -57,10 +53,11 @@ async def admin_add(cmd):
         raise CommandSyntaxError(cmd, "You must at-mention at least one role or user.")
 
     with db.connect() as (conn, cur):
-        mentions = [m.id for m in cmd.message.mentions] + [m.id for r in cmd.message.role_mentions for m in r.members]
-        values = ','.join(cur.mogrify('(%s,%s)', (cmd.guild.id, m)) for m in mentions)
-        query = f'INSERT INTO admins (server_id, user_id) VALUES {values} ON CONFLICT DO NOTHING;'
-        cur.execute(query)
+        mentions = [(cmd.guild.id, m.id) for m in cmd.message.mentions] + \
+                   [(cmd.guild.id, m.id) for r in cmd.message.role_mentions for m in r.members]
+        template = ','.join(['%s'] * len(mentions))
+        query = f'INSERT INTO admins (server_id, user_id) VALUES {template} ON CONFLICT DO NOTHING;'
+        cur.execute(query, mentions)
         conn.commit()
     await send_success(cmd.message)
 

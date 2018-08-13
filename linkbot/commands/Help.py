@@ -33,7 +33,7 @@ async def cmd_help(cmd: Command):
         # Check for bad command.
         if helpcmd not in bot.commands:
             raise CommandSyntaxError(cmd, helpcmd + ' is not a valid command.')
-        await send_help(cmd.channel if here else cmd.author, cmd.command_arg)
+        await send_help(cmd.channel if here else cmd.author, helpcmd)
 
     # if "help [here]"
     else:
@@ -43,17 +43,17 @@ async def cmd_help(cmd: Command):
 async def send_help(dest, helpcmd=None):
     if helpcmd:
         cmd_info = bot.commands[helpcmd]
-        embed = bot.embed(title="**__" + cmd_info.command + "__**",
-                          color=discord.Color.dark_green(),
+        embed = bot.embed(discord.Color.dark_green(),
+                          title="**__" + cmd_info.command + "__**",
                           description=cmd_info.description)
         cmd_info.embed_examples(embed, bot.prefix, cmd_as_code=False)
         await dest.send(embed=embed)
     else:
-        embed = bot.embed(title="__General Command Help__",
-                          color=discord.Color.dark_green(),
+        embed = bot.embed(discord.Color.dark_green(),
+                          title="__General Command Help__",
                           description=_help_header)
         for x in sorted(list(set([y for y in bot.commands.values() if y.show_in_help])), key=lambda z: z.command):
-            x.embed_syntax(embed, bot.prefix, mk_down='`', title_mk_down='__', sep='\n', inline=True)
+            x.embed_syntax(embed, bot.prefix, mk_down='`', title_mk_down='__', sep='\n', inline=False)
         await dest.send(embed=embed)
 
 

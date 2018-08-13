@@ -10,7 +10,7 @@ class Option:
     def __init__(self,
                  emote: str,
                  text: str="", *,
-                 func: Callable[[discord.User, discord.Reaction]]=None,
+                 func: Callable[[discord.User, discord.Reaction], None]=None,
                  refresh: bool=False,
                  next_menu: 'Menu'=None,
                  close=False):

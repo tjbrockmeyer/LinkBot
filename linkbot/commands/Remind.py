@@ -5,7 +5,7 @@ from linkbot.utils.cmd_utils import *
 from datetime import datetime, timedelta
 
 
-_delay_regex = re.compile(r"(?:(\d+)d ?)?(?:(\d+)h ?)?(?:(\d+)m ?)?(?:(\d+)s)?")
+_delay_regex = re.compile(r"(?:(?:(\d+)d ?)|(?:(\d+)h ?)|(?:(\d+)m ?)|(?:(\d+)s ?))+")
 
 
 @command(
@@ -13,7 +13,7 @@ _delay_regex = re.compile(r"(?:(\d+)d ?)?(?:(\d+)h ?)?(?:(\d+)m ?)?(?:(\d+)s)?")
     "Mentions you in a message once the given amount of time has passed.",
     [
         ('{c} in 1d 10m', 'Reminds you via a direct message in 1 days and 10 minutes.'),
-        ('{c} me of bedtime in 1h 3s', 'Sends you a reminder in 1 hour, 2 minutes and 3 seconds.'),
+        ('{c} me of bedtime in 1h 3s', 'Sends you a reminder in 1 hour and 3 seconds.'),
         ('{c} purge', 'Removes all reminders that are set for you.')
     ]
 )
@@ -29,9 +29,9 @@ async def remind(cmd: Command):
     # Parse the optional args and "feelgood" words.
     try:
         reason = ''
-        if cmd.args[0] == 'me':
+        if cmd.args[0].lower() == 'me':
             cmd.shiftargs()
-        if cmd.args[0] == 'of':
+        if cmd.args[0].lower() == 'of' or cmd.args[0].lower() == 'about':
             cmd.shiftargs()
             while True:
                 if not cmd.args:
@@ -79,7 +79,7 @@ async def remind(cmd: Command):
 
     # Include reason in the notification if it was provided.
     if reason != '':
-        outstring += ' about "{}".'.format(reason)
+        outstring += f' about "{reason}".'
     else:
         outstring += '.'
     await cmd.channel.send(outstring)
@@ -105,6 +105,6 @@ async def remind_soon(remindee, remind_at, reason):
     delta_time = (remind_at - datetime.now()).total_seconds()
     await asyncio.sleep(delta_time)
     if reason == '':
-        await remindee.send('This is your reminder {}!'.format(remindee.name))
+        await remindee.send(f'This is your reminder {remindee.name}!')
     else:
-        await remindee.send('I\'m reminding you about "{}", {}!'.format(reason, remindee.name))
+        await remindee.send(f'I\'m reminding you about "{reason}", {remindee.name}!')

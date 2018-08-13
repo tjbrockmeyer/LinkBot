@@ -1,11 +1,12 @@
 
 import logging
 import discord
+import asyncio
 from functools import wraps
-
 from linkbot.bot import client
 from linkbot.errors import *
 from linkbot.utils.checks import *
+import linkbot.utils.emoji as emoji
 from linkbot.utils.emoji import send_success
 from linkbot.utils.command import Command, CommandInfo
 from typing import Optional, List, Tuple
@@ -79,12 +80,16 @@ def on_event(event_name):
     return decorator
 
 
-def command(syntax: List[str], description: str, examples: List[Tuple[str, str]], *,
-            name: str="", aliases: Optional[List[str]]=None,
-            show_in_help: bool=True, help_subcommand: bool=True):
+def command(syntax: List[str],
+            description: str,
+            examples: List[Tuple[str, str]], *,
+            name: str="",
+            aliases: Optional[List[str]]=None,
+            show_in_help: bool=True,
+            help_subcommand: bool=True):
     def decorator(func):
-        a = aliases or []
-        n = name or func.__name__
+        a: List[str] = aliases or []
+        n: str = name or func.__name__
 
         @wraps(func)
         async def wrapper(cmd: Command, *args, **kwargs):
@@ -94,14 +99,25 @@ def command(syntax: List[str], description: str, examples: List[Tuple[str, str]]
                 cmd.argstr = cmd.command_arg
                 await send_help(cmd.channel, cmd.command_arg)
             else:
-                logging.info("Running command: {}".format(n))
-                await func(cmd, *args, **kwargs)
-                logging.info("Command complete: {}".format(n))
+                logging.info(f"Running command: {n}")
+                future = asyncio.ensure_future(func(cmd, *args, **kwargs), loop=client.loop)
+                e = (await asyncio.gather(future, loop=client.loop, return_exceptions=True))[0]
+                logging.info(f"Command complete: {n}")
+
+                if e:
+                    if not issubclass(type(e), CommandError):
+                        await cmd.channel.send(embed=bot.embed(
+                            discord.Color.red(),
+                            title=f"{emoji.Symbol.exclamation} Unknown Error {emoji.Symbol.exclamation}",
+                            description="Whoops! Something went wrong.\n"
+                                        "Your command could not be completed.\n"
+                                        "An error report was automatically sent."))
+                    raise e
 
         cmd_info = CommandInfo(n, wrapper, syntax, description, examples, a, show_in_help)
         bot.commands[n] = cmd_info
-        for a in aliases:
-            bot.commands[a] = cmd_info
+        for x in a:
+            bot.commands[x] = cmd_info
         return wrapper
     return decorator
 

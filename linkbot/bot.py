@@ -185,7 +185,7 @@ async def on_error(event_name: str, *args, **kwargs):
             await ch.send(embed=bot.embed(
                 discord.Color.red(),
                 title=f"{emoji.Symbol.exclamation} Unknown Error {emoji.Symbol.exclamation}",
-                description=e.public_reason))
+                description=e.public_reason + "\nAn error report was automatically sent."))
             await _send_traceback(fmt_exc)
 
         elif etype is CommandError:
