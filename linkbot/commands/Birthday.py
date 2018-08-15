@@ -126,10 +126,7 @@ async def birthday_check():
                 results = [r[0] for r in cur.fetchall()]
                 people = english_listing(results)
                 if results:
-                    cur.execute("SELECT info_channel FROM servers WHERE server_id = %s;", [guild.id])
-                    chan = cur.fetchone()[0]
-                    if not chan:
-                        chan = guild.system_channel
+                    chan = db.get_info_channel(guild)
                     await chan.send(f"Happy birthday, {people}!")
                     cur.execute("UPDATE birthdays SET last_congrats = %s WHERE person IN %s;",
                                 [now.year, tuple(results)])

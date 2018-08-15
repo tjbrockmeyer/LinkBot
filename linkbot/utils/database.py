@@ -15,6 +15,17 @@ def connect():
             yield (conn, cur)
 
 
+def get_info_channel(guild):
+    with connect() as (conn, cur):
+        cur.execute("SELECT info_channel FROM servers WHERE server_id = %s;", [guild.id])
+        chan = cur.fetchone()[0]
+        if not chan:
+            chan = guild.system_channel
+        else:
+            chan = guild.get_channel(chan)
+        return chan
+
+
 def setup(config_file: str) -> bool:
     """ Setup the connection string and test the connection. Returns True on successful setup. """
 
