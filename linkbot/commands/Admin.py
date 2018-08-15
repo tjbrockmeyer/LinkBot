@@ -26,7 +26,7 @@ async def admin(cmd: Command):
     elif subcmd == "remove":
         await admin_remove(cmd)
     else:
-        raise CommandSyntaxError(cmd, '{} is not a valid subcommand.'.format(subcmd))
+        raise CommandSyntaxError(cmd, f'{subcmd} is not a valid subcommand.')
 
 
 async def admin_list(cmd):

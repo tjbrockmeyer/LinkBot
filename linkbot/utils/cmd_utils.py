@@ -64,6 +64,7 @@ def background_task(func):
     @wraps(func)
     async def wrapper():
         await client.wait_until_ready()
+        await asyncio.sleep(1)
         await func()
 
     client.loop.create_task(wrapper())

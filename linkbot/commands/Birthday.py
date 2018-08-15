@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import asyncio
 from linkbot.utils.cmd_utils import *
 from linkbot.utils.misc import english_listing
@@ -8,9 +8,9 @@ from linkbot.utils.misc import english_listing
     ["{c} list", "{c} set <name> <mm/dd>", "{c} remove <name>"],
     "Set, remove, or list the registered birthdays from the database.",
     [
-        ("{c} set xCoDGoDx 04/20", "This will set xCoDGoDx's birthday as April 20th."),
+        ("{c} set Bill 04/20", "This will set Bill's birthday as April 20th."),
         ("{c} list", "will list all birthdays that are registered for this server."),
-        ("{c} remove xCoDGoDx", "will remove xCoDGoDx's birthday from the system.")
+        ("{c} remove Bill", "will remove Bill's birthday from the system.")
     ],
     aliases=['bday']
 )
@@ -32,11 +32,7 @@ async def birthday(cmd: Command):
 async def birthday_list(cmd):
     now = datetime.now()
     with db.connect() as (conn, cur):
-        cur.execute(
-            """
-            SELECT person, birthday FROM birthdays
-            WHERE server_id = %s;
-            """, [cmd.guild.id])
+        cur.execute("SELECT person, birthday FROM birthdays WHERE server_id = %s;", [cmd.guild.id])
         vals = cur.fetchall()
     bdays = []
     for (p, b) in vals:
@@ -98,16 +94,9 @@ async def birthday_set(cmd):
     # set the birthday for the server and person.
     bday = datetime(year=1, month=bday.month, day=bday.day)
     with db.connect() as (conn, cur):
-        cur.execute(
-            """
-            DELETE FROM birthdays
-            WHERE server_id = %s AND person = %s;
-            """, [cmd.guild.id, bdayperson])
-        cur.execute(
-            """
-            INSERT INTO birthdays (server_id, person, birthday)
-            VALUES (%s, %s, %s);
-            """, [cmd.guild.id, bdayperson, bday])
+        cur.execute("DELETE FROM birthdays WHERE server_id = %s AND person = %s;", [cmd.guild.id, bdayperson])
+        cur.execute("INSERT INTO birthdays (server_id, person, birthday) VALUES (%s, %s, %s);",
+                    [cmd.guild.id, bdayperson, bday])
         conn.commit()
     await send_success(cmd.message)
 
@@ -117,13 +106,9 @@ async def birthday_set(cmd):
 async def birthday_remove(cmd):
     person = cmd.args[0]
     with db.connect() as (conn, cur):
-        cur.execute(
-            """
-            DELETE FROM birthdays
-            WHERE server_id = %s AND person = %s;
-            """, [cmd.guild.id, person])
+        cur.execute("DELETE FROM birthdays WHERE server_id = %s AND person = %s;", [cmd.guild.id, person])
         if cur.rowcount == 0:
-            raise CommandError(cmd, "{} doesn't have a registered birthday.".format(person))
+            raise CommandError(cmd, f"{person} doesn't have a registered birthday.")
         conn.commit()
     await send_success(cmd.message)
 
@@ -135,20 +120,15 @@ async def birthday_check():
         today = datetime(year=1, month=now.month, day=now.day)
         for guild in client.guilds:
             with db.connect() as (conn, cur):
-                cur.execute(
-                    """
-                    SELECT person, last_congrats FROM birthdays
-                    WHERE server_id = %s AND birthday = %s;
-                    """, [guild.id, today])
-                user_listing = english_listing([x[0] for x in cur.fetchall() if x[1] != now.year])
-                if len(user_listing) > 0:
-                    # await discord.utils.get(guild.channels, is_default=True).send("Happy birthday, {}!".format(users)
-                    await bot.owner.send("Happy birthday, {}!".format(user_listing))
-                    cur.execute(
-                        """
-                        UPDATE birthdays SET last_congrats = %s
-                        WHERE person IN %s;
-                        """, [now.year, tuple(d[0] for d in user_listing)])
+                cur.execute("SELECT person FROM birthdays "
+                            "WHERE server_id = %s AND birthday = %s AND last_congrats != %s;",
+                            [guild.id, today, now.year])
+                results = [r[0] for r in cur.fetchall()]
+                people = english_listing(results)
+                if results:
+                    await discord.utils.get(guild.channels, is_default=True).send(f"Happy birthday, {people}!")
+                    cur.execute("UPDATE birthdays SET last_congrats = %s WHERE person IN %s;",
+                                [now.year, tuple(results)])
                     conn.commit()
-        await asyncio.sleep(900)
+        await asyncio.sleep(1)
 

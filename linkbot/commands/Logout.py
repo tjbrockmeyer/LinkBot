@@ -25,7 +25,6 @@ async def restart(cmd: Command):
             discord.Color.dark_gold(),
             title="Are you sure you want to restart the bot?"),
             only_accept=bot.owner):
-        bot.restart = True
         await send_success(cmd.message)
         await force_logout(reload=True)
 
