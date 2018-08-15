@@ -3,7 +3,6 @@ import os
 import sys
 import discord
 import traceback
-from datetime import datetime
 from functools import wraps, reduce
 from importlib import import_module
 

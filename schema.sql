@@ -4,7 +4,8 @@
 
 CREATE TABLE servers (
     server_id               bigint      primary key,
-    entry_role              bigint
+    entry_role              bigint,
+    info_channel            bigint
 );
 
 CREATE TABLE admins (
@@ -14,10 +15,10 @@ CREATE TABLE admins (
 );
 
 CREATE TABLE birthdays (
-    server_id               bigint      references servers(server_id),
+    server_id               bigint      not null references servers(server_id),
     person                  text        not null,
     birthday                date        not null,
-    last_congrats           integer
+    last_congrats           integer     not null default(0)
 );
 
 CREATE TABLE quotes (
