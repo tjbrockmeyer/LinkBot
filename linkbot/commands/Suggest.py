@@ -3,10 +3,12 @@ from linkbot.utils.misc import send_split_message
 
 
 @command(
-    ["{c} <feature>"],
+    ["{c} add <feature>", "{c} remove <id>", "{c} list"],
     "Suggest a feature that you think the bot should have. Your suggestion will be saved in a suggestions file.",
     [
-        ("{c} Flying puppies please!", "Leaves a suggestion for flying puppies - politely...")
+        ("{c} add some cool stuff", "Suggests that some cool stuff gets added."),
+        ("{c} remove 5", "Removes the 5th suggestion from the list."),
+        ("{c} list", "Lists all of the given suggestions.")
     ]
 )
 @require_args(1)

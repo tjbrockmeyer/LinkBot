@@ -1,6 +1,6 @@
-from functools import reduce
 
 from linkbot.utils.cmd_utils import *
+from linkbot.utils.misc import english_listing
 
 
 @command(
@@ -32,24 +32,16 @@ async def admin(cmd: Command):
 async def admin_list(cmd):
     with db.connect() as (conn, cur):
         cur.execute("SELECT user_id FROM admins WHERE server_id = %s;", [cmd.guild.id])
-        admins = [x[0] for x in cur.fetchall()]
-
-        # Check for existing admins
-        if len(admins) == 0:
-            raise CommandError(cmd, 'There are no admins on this server.')
-
-        # get the admin names from their IDs, save them to a string, then send it to the channel.
-        admins = [str(client.get_user(x)) for x in admins]
-        if len(admins) == 1:
-            admins = "Admin: " + admins[0]
-        else:
-            admins = reduce(lambda x, y: "{}, {}".format(x, y), admins, "Admins: ")
-        await cmd.channel.send(admins)
+        admins = [cmd.guild.get_member(x[0]) for x in cur.fetchall()]
+        if cmd.guild.owner not in admins:
+            admins.append(cmd.guild.owner)
+        admin_str = "Admins: " + english_listing([a.display_name for a in admins])
+        await cmd.channel.send(admin_str)
 
 
 @restrict(ADMIN_ONLY)
 async def admin_add(cmd):
-    if len(cmd.message.mentions) == 0 and len(cmd.message.role_mentions) == 0:
+    if not cmd.message.mentions and not cmd.message.role_mentions:
         raise CommandSyntaxError(cmd, "You must at-mention at least one role or user.")
 
     with db.connect() as (conn, cur):

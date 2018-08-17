@@ -6,7 +6,7 @@ _syntax_regex = re.compile(r"(\w+)\s+to\s+(\w+)(?:\s+(exclude|include)\s+((?:\w+
 
 
 @command(
-    ["{c} <chan1> to <chan2>", " + (include|exclude) <name>, <name>,"],
+    ["{c} <chan1> to <chan2>", "<c1> to <c2> (include|exclude) <name>, <name>..."],
     "Move members that are inside voice channel 1 to voice channel 2.",
     [
         ("{c} pallet town to bk lounge", "Moves everyone in Pallet Town to the BK Lounge."),

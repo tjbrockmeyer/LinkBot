@@ -5,7 +5,7 @@ import os
 
 
 
-@command( [], "", [], aliases=['logoff'], show_in_help=False)
+@command([], "", [], aliases=['logoff'], show_in_help=False)
 @restrict(OWNER_ONLY)
 async def logout(cmd: Command):
     if await menu.send_confirmation(
@@ -42,18 +42,7 @@ async def update(cmd: Command):
             only_accept=bot.owner):
         logging.info("Pulling to: " + os.getcwd())
         g = git.cmd.Git(os.getcwd())
-        try:
-            g.pull('origin', 'master')
-        except:
-            logging.info("The local repository has unpushed changes.")
-            if len(cmd.args) > 0 and cmd.args[0].startswith('f'):
-                logging.info("Forcing an overwrite.")
-                g.fetch('--all')
-                g.reset('--hard', 'origin/master')
-                g.pull('origin', 'master')
-            else:
-                raise CommandError(
-                    cmd, "There are unpushed changes in the local repository. Use `update force` to overwrite.")
+        g.pull('origin', 'master')
         logging.info("Pull complete.")
         await send_success(cmd.message)
         await force_logout(reload=True)
