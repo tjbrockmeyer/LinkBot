@@ -12,9 +12,9 @@ from linkbot.utils.command import Command, CommandInfo
 from typing import Optional, List, Tuple
 
 DISABLE = 1
-ADMIN_ONLY = 2
+SERVER_ONLY = 2
 OWNER_ONLY = 4
-SERVER_ONLY = 8
+ADMIN_ONLY = 8 | SERVER_ONLY
 DM_ONLY = 16
 
 
@@ -24,24 +24,19 @@ def restrict(conditions, reason=''):
         async def wrapper(cmd, *args, **kwargs):
             if DISABLE & conditions:
                 raise CommandPermissionError(
-                    cmd, "`{}` is disabled. {}"
-                         .format(_usrepl(func.__name__), "Reason: {}.".format(reason) if reason else ''))
+                    cmd, f"`{cmd.info.command}` is disabled. {'Reason: {}.'.format(reason) if reason else ''}")
             elif OWNER_ONLY & conditions and not is_admin(cmd.author):
                 raise CommandPermissionError(
-                    cmd, "`{}` can only be used by the bot's owner: {}"
-                         .format(_usrepl(func.__name__), bot.owner))
-            elif ADMIN_ONLY & conditions and not is_admin(cmd.author):
-                raise CommandPermissionError(
-                    cmd, "`{}` can only be used by registered adnims. See `{}admin list`"
-                         .format(_usrepl(func.__name__), bot.prefix))
+                    cmd, f"`{cmd.info.command}` can only be used by the bot's owner: {bot.owner}")
             elif SERVER_ONLY & conditions and cmd.guild is None:
                 raise CommandPermissionError(
-                    cmd, "`{}` can only be used in a server."
-                         .format(_usrepl(func.__name__)))
+                    cmd, f"`{cmd.info.command}` can only be used in a server.")
+            elif ADMIN_ONLY & conditions and not is_admin(cmd.author):
+                raise CommandPermissionError(
+                    cmd, f"`{cmd.info.command}` can only be used by registered adnims. See `{bot.prefix}admin list`")
             elif DM_ONLY & conditions and not cmd.is_dm:
                 raise CommandPermissionError(
-                    cmd, "`{}` can only be used in a direct message."
-                         .format(_usrepl(func.__name__)))
+                    cmd, f"`{cmd.info.command}` can only be used in a direct message.")
             else:
                 await func(cmd, *args, **kwargs)
         return wrapper
@@ -54,7 +49,7 @@ def require_args(count):
         async def wrapper(cmd, *args, **kwargs):
             if len(cmd.args) < count:
                 raise CommandSyntaxError(
-                    cmd, reason="At least {} argument{} necessary.".format(count, ' is' if count == 1 else 's are'))
+                    cmd, reason=f"At least {count} argument{' is' if count == 1 else 's are'} necessary.")
             await func(cmd, *args, **kwargs)
         return wrapper
     return decorator
@@ -74,7 +69,7 @@ def background_task(func):
 def on_event(event_name):
     def decorator(func):
         if event_name not in bot.events.keys():
-            raise LinkBotError("For method {}, {} is not a registered event.".format(func.__name__, event_name))
+            raise LinkBotError(f"For method {func.__name__}, {event_name} is not a registered event.")
         else:
             bot.events[event_name].append(func)
         return func

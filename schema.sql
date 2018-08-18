@@ -23,10 +23,17 @@ CREATE TABLE birthdays (
 
 CREATE TABLE quotes (
     server_id               bigint      references servers(server_id),
-    id                      integer     not null,
+    id                      integer,
     author                  text        not null,
     quote                   text        not null,
     primary key (server_id, id)
+);
+
+CREATE TABLE cmdbans (
+    server_id               bigint      references servers(server_id),
+    user_id                 bigint,
+    command                 text,
+    primary key (server_id, user_id, command)
 );
 
 -- INDEPENDENT TABLES --

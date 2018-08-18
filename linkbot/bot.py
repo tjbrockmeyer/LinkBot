@@ -142,10 +142,11 @@ async def on_message(message):
 
         # if the message has the prefix or the channel is a DM, then the message is targeted at the bot.
         if cmd.has_prefix or cmd.is_dm:
-            if cmd.is_valid:
-                await cmd.run()
-            else:
+            if not cmd.is_valid:
                 raise CommandError(cmd, f'"{cmd.command_arg}" is not a valid command.')
+            if cmd.is_banned():
+                raise CommandPermissionError(cmd, "You are banned from using this command.")
+            await cmd.run()
 
 
 @client.event
@@ -198,8 +199,9 @@ async def on_error(event_name: str, *args, **kwargs):
 
 async def _send_traceback(tb):
     logging.error(tb)
-    for msg in split_message(tb, 1994):
-        await bot.owner.send(f"```{msg}```")
+    if not bot.debug:
+        for msg in split_message(tb, 1994):
+            await bot.owner.send(f"```{msg}```")
 
 
 # Database setup and test.

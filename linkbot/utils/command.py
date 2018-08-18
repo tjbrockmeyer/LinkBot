@@ -1,6 +1,7 @@
 
 from functools import reduce
 import discord
+import linkbot.utils.database as db
 
 
 class Command:
@@ -64,8 +65,16 @@ class Command:
                 self.args.append(x)
 
         # Get info
-        self.info = bot.commands.get(self.command_arg.lower())
+        self.info: CommandInfo = bot.commands.get(self.command_arg.lower())
         self.is_valid = self.info is not None
+
+    def is_banned(self):
+        if not self.is_valid:
+            return False
+        with db.connect() as (conn, cur):
+            cur.execute("SELECT command FROM cmdbans WHERE server_id = %s AND user_id = %s AND command = %s;",
+                        [self.guild.id, self.author.id, self.info.command])
+            return cur.fetchone() is not None
 
     async def run(self):
         await self.info.func(self)

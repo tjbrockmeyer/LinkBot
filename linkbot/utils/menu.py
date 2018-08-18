@@ -3,14 +3,14 @@ from linkbot.bot import client
 import asyncio
 import discord
 import linkbot.utils.emoji as emoji
-from typing import Union, Callable, List
+from typing import Union, Callable, List, Coroutine, Optional
 
 
 class Option:
     def __init__(self,
                  emote: str,
                  text: str="", *,
-                 func: Callable[[discord.User, discord.Reaction], None]=None,
+                 func: Callable[[discord.User, discord.Reaction], Optional[Coroutine]]=None,
                  refresh: bool=False,
                  next_menu: 'Menu'=None,
                  close=False):
