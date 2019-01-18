@@ -3,6 +3,8 @@ config.ini
 
 # Generated files/directories
 INSTANCE
+.coverage
+cover/
 .idea/
 __pycache__/
 data/

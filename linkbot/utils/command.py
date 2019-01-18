@@ -69,9 +69,12 @@ class Command:
         self.is_valid = self.info is not None
 
     def is_banned(self):
+        # TODO: Fix when cmd bans are working
+        return False
+
         if not self.is_valid:
             return False
-        with db.connect() as (conn, cur):
+        with db.Session() as sess:
             cur.execute("SELECT command FROM cmdbans WHERE server_id = %s AND user_id = %s AND command = %s;",
                         [self.guild.id, self.author.id, self.info.command])
             return cur.fetchone() is not None

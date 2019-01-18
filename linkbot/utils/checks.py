@@ -9,7 +9,7 @@ def is_admin(member: discord.Member):
     """ Checks if the member is able to use admin commands. This can be an Admin, Bot owner, or Server owner. """
     if is_bot_owner(member) or is_server_owner(member):
         return True
-    with db.connect() as (conn, cur):
+    with db.Session() as sess:
         cur.execute("SELECT user_id FROM admins WHERE server_id = %s AND user_id = %s;", [member.guild.id, member.id])
         if cur.fetchone() is not None:
             return True

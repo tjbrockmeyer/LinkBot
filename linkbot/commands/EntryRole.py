@@ -1,4 +1,5 @@
 from linkbot.utils.cmd_utils import *
+from linkbot.utils.search import search_roles, resolve_search_results
 
 
 @command(
@@ -12,32 +13,29 @@ from linkbot.utils.cmd_utils import *
 @restrict(SERVER_ONLY)
 async def entryrole(cmd: Command):
     if not cmd.args:
-        with db.connect() as (conn, cur):
-            cur.execute("SELECT entry_role FROM servers WHERE server_id = %s;", [cmd.guild.id])
-            role_id = cur.fetchone()[0]
-        if not role_id:
+        with db.Session() as sess:
+            r_id = sess.get_entry_role(cmd.guild.id)
+        if not r_id:
             raise CommandError(cmd, 'There is not an entry level role set for this server.')
-        role = discord.utils.get(cmd.guild.roles, id=role_id)
+        role = discord.utils.get(cmd.guild.roles, id=r_id)
         await cmd.channel.send(f'Entry level role: `{role}`')
 
     elif cmd.args[0] == 'set':
-        mentions = cmd.message.role_mentions
-        if not mentions:
-            raise CommandSyntaxError(cmd, "You must at-mention a role in the server to be the entry level role.")
-        role = cmd.message.role_mentions[0]
-        with db.connect() as (conn, cur):
-            cur.execute("UPDATE servers SET entry_role = %s", [role.id])
-            conn.commit()
-        await send_success(cmd.message)
+        cmd.shiftargs()
+        if not cmd.args:
+            raise CommandSyntaxError(cmd, "You must provide a role in the server to become the entry level role.")
+
+        async def local_set_entryrole(role):
+            with db.Session() as sess:
+                sess.set_entry_role(cmd.guild.id, role.id)
+            await send_success(cmd.message)
+
+        roles = search_roles(cmd.argstr, cmd.guild)
+        await resolve_search_results(roles, cmd.argstr, 'roles', cmd.author, cmd.channel, local_set_entryrole)
 
     elif cmd.args[0] == 'remove':
-        with db.connect() as (conn, cur):
-            cur.execute("SELECT entry_role FROM servers WHERE server_id = %s;", [cmd.guild.id])
-            role_id = cur.fetchone()[0]
-            if not role_id:
-                raise CommandError(cmd, "There isn't an entry role to remove.")
-            cur.execute("UPDATE servers SET entry_role = NULL")
-            conn.commit()
+        with db.Session() as sess:
+            sess.remove_entry_role(cmd.guild.id)
         await send_success(cmd.message)
     else:
         raise CommandSyntaxError(cmd, "Invalid subcommand.")
@@ -45,9 +43,8 @@ async def entryrole(cmd: Command):
 
 @on_event('ready')
 async def entryrole_check_all():
-    with db.connect() as (conn, cur):
-        cur.execute("SELECT server_id, entry_role FROM servers WHERE entry_role IS NOT NULL;")
-        results: Tuple[int, int] = cur.fetchall()
+    with db.Session() as sess:
+        results = sess.get_guilds_with_entry_roles()
     for (guild_id, role_id) in results:
         guild = client.get_guild(guild_id)
         role = discord.utils.get(guild.roles, id=role_id)
@@ -58,9 +55,8 @@ async def entryrole_check_all():
 
 @on_event('member_join')
 async def entryrole_check_one(member):
-    with db.connect() as (conn, cur):
-        cur.execute("SELECT entry_role FROM servers WHERE server_id = %s AND entry_role IS NOT NULL;", [member.guild.id])
-        result = cur.fetchone()
-    if result:
-        role = discord.utils.get(member.guild.roles, id=result[0])
+    with db.Session() as sess:
+        r_id = sess.get_entry_role(member.guild.id)
+    if r_id:
+        role = discord.utils.get(member.guild.roles, id=r_id)
         await member.add_roles(role)

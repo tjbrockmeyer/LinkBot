@@ -1,4 +1,5 @@
 discord-rewrite
 requests
 gitpython
-psycopg2
+neo4j
+fuzzywuzzy[speedup]

@@ -49,6 +49,7 @@ class Menu:
     def set_options(self, options: Union[Callable[[], List[Option]], List[Option]]) -> 'Menu':
         """
         Set this menu's options.
+
         :param options: A list of Options to choose from. Alternatively, a function that returns a list of options.
         :return: self, for operation chaining if necessary.
         """

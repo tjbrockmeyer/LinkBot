@@ -1,22 +1,32 @@
 
 import os
 import json
+from datetime import datetime
+from fuzzywuzzy import process
+from fuzzywuzzy.fuzz import partial_ratio
 from functools import reduce
+from typing import List, Any
 
 
-def save_json(filepath, data, pretty=False):
+def save_json(filepath: str, data: Any, pretty: bool=False):
     with open(filepath, 'w') as f:
         json.dump(data, f, indent=(None if not pretty else 4))
 
 
-def load_json(filepath):
+def load_json(filepath: str):
     if not os.path.isfile(filepath):
         return {}
     with open(filepath, 'r') as f:
         return json.load(f)
 
 
-def format_as_column(content, column_length, alignment=-1):
+def string_search_top_n(query: str, choices: List[str], n: int=5):
+    l = process.extract(query, choices, limit=n, scorer=partial_ratio)
+    diff = [l[0][1] - r[1] for r in l]
+    return [l[i] for i, v in enumerate(diff) if v <= 20]
+
+
+def format_as_column(content: str, column_length: int, alignment: int=-1):
     add_spaces = column_length - len(content)
     if alignment == 0:
         left = add_spaces // 2
@@ -27,15 +37,17 @@ def format_as_column(content, column_length, alignment=-1):
     return " " * add_spaces + content
 
 
-def english_listing(items):
+def english_listing(items: List[Any]):
     if not items:
         return ''
     if len(items) == 1:
         return str(items[0])
-    return reduce(lambda x, y: "{}, {}".format(y, x), reversed(items[:-1]) , "and {}".format(items[-1]))
+    if len(items) == 2:
+        return ' and '.join(str(i) for i in items)
+    return ", ".join(str(i) for i in items[:-1]) + f", and {items[-1]}"
 
 
-def split_message(msgstr, maxlength=2000):
+def split_message(msgstr: str, maxlength=2000):
     while len(msgstr) > maxlength:
         split_index = msgstr.rfind('\n', 0, maxlength)
         if split_index == -1:
@@ -47,12 +59,34 @@ def split_message(msgstr, maxlength=2000):
     yield msgstr
 
 
-async def send_split_message(target, message, maxlength=2000):
-    for msg in split_message(message, maxlength):
-        await target.send(msg)
+def parse_date(arg1: str, arg2: str=''):
+    # Try 09/02
+    try:
+        f = "%m/%d"
+        bday = datetime.strptime(arg1, f)
+    except ValueError:
+
+        # Try 09-02
+        try:
+            f = "%m-%d"
+            bday = datetime.strptime(arg1, f)
+        except ValueError:
+
+            # Try Sep 02
+            try:
+                arg1 = arg1.lower().capitalize()
+                f = "%b %d"
+                bday = datetime.strptime(arg1 + " " + arg2, f)
+            except ValueError:
+
+                # Try September 02
+                f = "%B %d"
+                bday = datetime.strptime(arg1 + " " + arg2, f)
+    return bday
 
 
-def create_config(filepath):
+
+def create_config(filepath: str):
     with open(filepath, 'w') as cfg:
         cfg.write(r"""
 # Server owner discord id,

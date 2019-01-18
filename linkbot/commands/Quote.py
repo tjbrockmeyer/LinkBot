@@ -44,7 +44,7 @@ async def quote(cmd: Command):
 
 
 async def quote_id(cmd: Command, q_id: int):
-    with db.connect() as (conn, cur):
+    with db.Session() as sess:
         cur.execute("SELECT author, quote FROM quotes WHERE server_id = %s AND id = %s;", [cmd.guild.id, q_id])
         result: Tuple[str, str] = cur.fetchone()
     if not result:
@@ -55,7 +55,7 @@ async def quote_id(cmd: Command, q_id: int):
 
 
 async def quote_list(cmd: Command):
-    with db.connect() as (conn, cur):
+    with db.Session() as sess:
         if cmd.args:
             author = cmd.args[0]
             cur.execute("SELECT id, quote FROM quotes WHERE server_id = %s AND author = %s;",
@@ -80,7 +80,7 @@ async def quote_list(cmd: Command):
 
 async def quote_random(cmd: Command):
     random.seed()
-    with db.connect() as (conn, cur):
+    with db.Session() as sess:
         if cmd.args:
             author = cmd.args[0]
             cur.execute("SELECT id, quote FROM quotes WHERE server_id = %s AND author = %s;",
@@ -114,7 +114,7 @@ async def quote_add(cmd: Command):
     author, text = (q_args[match.start() + 2:], q_args[:match.start()].replace('\n', '\\n'))
 
     # TODO: not correctly identifying which id to use next.
-    with db.connect() as (conn, cur):
+    with db.Session() as sess:
         cur.execute("SELECT id FROM quotes WHERE server_id = %s ORDER BY id;", [cmd.guild.id])
         result = [r[0] for r in cur.fetchall()]
         for (i, j) in enumerate(result):
@@ -138,7 +138,7 @@ async def quote_remove(cmd: Command):
     except TypeError:
         raise CommandSyntaxError(cmd, str(cmd.args[0]) + ' is not a valid quote ID.')
 
-    with db.connect() as (conn, cur):
+    with db.Session() as sess:
         cur.execute("SELECT author, quote FROM quotes WHERE server_id = %s AND id = %s;", [cmd.guild.id, q_id])
         result = cur.fetchone()
         if not result:

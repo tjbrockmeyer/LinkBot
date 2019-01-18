@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta
-import asyncio
+
 from linkbot.utils.cmd_utils import *
-from linkbot.utils.misc import english_listing
+from linkbot.utils.misc import english_listing, parse_date
+from linkbot.utils.search import get_guild_info_channel, search_members, resolve_search_results
+from datetime import date, datetime
 
 
 @command(
@@ -31,105 +32,77 @@ async def birthday(cmd: Command):
 
 async def birthday_list(cmd):
     now = datetime.now()
-    with db.connect() as (conn, cur):
-        cur.execute("SELECT person, birthday FROM birthdays WHERE server_id = %s;", [cmd.guild.id])
-        vals = cur.fetchall()
+    with db.Session() as sess:
+        results = sess.get_guild_birthdays(cmd.guild.id)
     bdays = []
-    for (p, b) in vals:
+    for (p, b) in results:
         if b.month > now.month or (b.month == now.month and b.day >= now.day):
-            bdays.append([p, datetime(now.year, b.month, b.day)])
+            bdays.append([cmd.guild.get_member(p), datetime(now.year, b.month, b.day)])
         else:
-            bdays.append([p, datetime(now.year + 1, b.month, b.day)])
+            bdays.append([cmd.guild.get_member(p), datetime(now.year + 1, b.month, b.day)])
     if len(bdays) == 0:
         raise CommandError(cmd, "I don't know anyone's birthdays yet.")
     bdays.sort(key=lambda x: x[1])
 
     send_msg = ""
     for (p, b) in bdays:
-        send_msg += p + ": " + b.strftime("%B %d") + "\n"
+        send_msg += f"{p.display_name}: {b.strftime('%B %d')}\n"
     await cmd.channel.send(send_msg)
 
 
 @restrict(ADMIN_ONLY)
 @require_args(2)
 async def birthday_set(cmd):
-    bdayperson = cmd.args[0]
+    person_search = cmd.args[0]
     bdayarg = cmd.args[1]
     # if specified that today is the birthday, set it.
     if bdayarg == "today":
-        bday = datetime.now()
+        bday = date.today()
     # otherwise, we'll have to parse it out manually.
     else:
-
-        # Try 09/02
         try:
-            f = "%m/%d"
-            bday = datetime.strptime(bdayarg, f)
+            bday = parse_date(bdayarg, cmd.args[2] if len(cmd.args) > 2 else "")
         except ValueError:
-
-            # Try 09-02
-            try:
-                f = "%m-%d"
-                bday = datetime.strptime(bdayarg, f)
-            except ValueError:
-
-                # Try Sep 02
-                try:
-                    bdayarg2 = cmd.args[2].lower().capitalize()
-                    f = "%b %d"
-                    bday = datetime.strptime(bdayarg2 + " " + bdayarg2, f)
-                except (ValueError, IndexError):
-
-                    # Try September 02
-                    try:
-                        bdayarg2 = cmd.args[2].lower().capitalize()
-                        f = "%B %d"
-                        bday = datetime.strptime(bdayarg + " " + bdayarg2, f)
-                    except (ValueError, IndexError):
-
-                        # Send error: Invalid format.
-                        raise CommandSyntaxError(
-                            cmd, 'Birthdays must be in the format of TB 09/02, TB 09-02, TB Sep 02 or TB September 02.')
+            # Send error: Invalid format.
+            raise CommandSyntaxError(
+                cmd, 'Birthdays must be in the format of TB 09/02, TB 09-02, TB Sep 02 or TB September 02.')
 
     # set the birthday for the server and person.
-    bday = datetime(year=1, month=bday.month, day=bday.day)
-    with db.connect() as (conn, cur):
-        cur.execute("DELETE FROM birthdays WHERE server_id = %s AND person = %s;", [cmd.guild.id, bdayperson])
-        cur.execute("INSERT INTO birthdays (server_id, person, birthday) VALUES (%s, %s, %s);",
-                    [cmd.guild.id, bdayperson, bday])
-        conn.commit()
-    await send_success(cmd.message)
+    async def local_birthday_set(member):
+        with db.Session() as sess:
+            sess.set_birthday(cmd.guild.id, member.id, bday)
+        await send_success(cmd.message)
+
+    bday = date(1, bday.month, bday.day)
+    s_results = search_members(person_search, cmd.guild)
+    await resolve_search_results(s_results, person_search, 'members', cmd.author, cmd.channel, local_birthday_set)
+
 
 
 @restrict(ADMIN_ONLY)
 @require_args(1)
 async def birthday_remove(cmd):
-    person = cmd.args[0]
-    with db.connect() as (conn, cur):
-        cur.execute("DELETE FROM birthdays WHERE server_id = %s AND person = %s;", [cmd.guild.id, person])
-        if cur.rowcount == 0:
-            raise CommandError(cmd, f"{person} doesn't have a registered birthday.")
-        conn.commit()
-    await send_success(cmd.message)
+    async def local_birthday_remove(member):
+        with db.Session() as sess:
+            sess.remove_birthday(cmd.guild.id, member.id)
+        await send_success(cmd.message)
+
+    person_search = cmd.args[0]
+    s_results = search_members(person_search, cmd.guild)
+    await resolve_search_results(s_results, person_search, 'members', cmd.author, cmd.channel, local_birthday_remove)
 
 
 @background_task
 async def birthday_check():
     while True:
-        now = datetime.now()
-        today = datetime(year=1, month=now.month, day=now.day)
         for guild in client.guilds:
-            with db.connect() as (conn, cur):
-                cur.execute("SELECT person FROM birthdays "
-                            "WHERE server_id = %s AND birthday = %s AND last_congrats != %s;",
-                            [guild.id, today, now.year])
-                results = [r[0] for r in cur.fetchall()]
-                people = english_listing(results)
-                if results:
-                    chan = db.get_info_channel(guild)
-                    await chan.send(f"Happy birthday, {people}!")
-                    cur.execute("UPDATE birthdays SET last_congrats = %s WHERE person IN %s;",
-                                [now.year, tuple(results)])
-                    conn.commit()
+            with db.Session() as sess:
+                m_ids = sess.get_unrecognized_birthdays(guild.id)
+                if m_ids:
+                    names = [guild.get_member(m_id).display_name for m_id in m_ids]
+                    people = english_listing(names)
+                    channel = get_guild_info_channel(guild)
+                    await channel.send(f"Happy birthday, {people}!")
+                    sess.set_birthday_recognition(guild.id, m_ids)
         await asyncio.sleep(900)
 

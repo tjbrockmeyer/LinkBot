@@ -2,6 +2,7 @@ import logging
 import os
 import sys
 import discord
+import asyncio
 import traceback
 from functools import wraps, reduce
 from importlib import import_module
@@ -13,7 +14,11 @@ from linkbot.errors import *
 from linkbot.utils.ini import Ini
 from linkbot.utils import emoji
 from linkbot.utils.command import Command
-from linkbot.utils.misc import create_config, split_message
+from linkbot.utils.misc import create_config, split_message, string_search_top_n
+
+
+cmd_dir = 'linkbot/commands/'
+config_ini = 'config.ini'
 
 
 class LinkBot:
@@ -51,24 +56,35 @@ class LinkBot:
             raise InitializationError(f"'prefix' must be specified in {config_ini} for proper functionality.")
 
     def run(self):
-        if bot.debug:
-            client.run(self.token)
-            return
-
-        from pathlib import Path
-        if os.path.isfile('INSTANCE'):
-            raise InitializationError("Only one instance may be running at a time.")
-        Path('INSTANCE').touch()
-        logging.info('Initializing and logging in...')
         try:
-            client.run(self.token)
-        finally:
-            os.remove('INSTANCE')
+            logging.info("Connecting to the database...")
+            if not db.startup(config_ini):
+                raise InitializationError("Database is unaccessible")
 
+            logging.info("Loading commands...")
+            for file in [cmd_dir + f for f in os.listdir(cmd_dir)]:
+                if os.path.isfile(file) and not file.endswith('__init__.py'):
+                    package = file.replace('/', '.')[:-3]
+                    _ = import_module(package)
+        except InitializationError:
+            asyncio.ensure_future(client.close())
+            raise
+        except Exception:
+            etype, e, tb = sys.exc_info()
+            fmt_exc = reduce(lambda x, y: f"{x}{y}", traceback.format_exception(etype, e, tb), "")
+            logging.error(fmt_exc)
+            asyncio.ensure_future(client.close())
+            raise
+
+        logging.info('Initializing and logging in...')
+        client.run(self.token)
+
+        db.shutdown()
         logging.info('Bot has been logged out.')
         if self.restart:
             logging.info("Restarting...")
             os.execl(sys.executable, sys.executable, *sys.argv)
+
 
     @staticmethod
     def embed(c: discord.Color, ft: str="", **kwargs):
@@ -76,8 +92,6 @@ class LinkBot:
             .set_footer(text=ft if ft else client.user.display_name, icon_url=client.user.avatar_url)
 
 
-cmd_dir = 'linkbot/commands/'
-config_ini = 'config.ini'
 client = discord.Client()
 bot = LinkBot()
 
@@ -95,7 +109,6 @@ def event(func):
     bot.events[e] = []
     return wrapper
 
-
 @event
 async def on_ready():
     bot.owner = client.get_user(bot.owner_id)
@@ -107,32 +120,30 @@ async def on_ready():
         logging.info('Currently running in DEBUG mode. Edit source with DEBUG = False to deactivate.')
     else:
         await client.change_presence(activity=discord.Game(name=f'{bot.prefix}help'))
-    logging.info('LinkBot is ready.')
 
+    if bot.debug:
+        logging.info('Syncing members...')
+        with db.Session() as sess:
+            for guild in client.guilds:
+                sess.create_guild(guild.id)
+                sess.sync_members(guild.id, [m.id for m in guild.members])
+
+    logging.info('LinkBot is ready.')
 
 @event
 async def on_member_join(member):
-    pass
-
+    with db.Session() as sess:
+        sess.create_member(member.guild.id, member.id)
 
 @event
 async def on_guild_join(guild):
-    # Add an entry for this guild into the database.
-    with db.connect() as (conn, cur):
-        cur.execute(
-            """
-            INSERT INTO servers (server_id)
-            VALUES (%s);
-            """, [guild.id])
-        conn.commit()
-
+    with db.Session() as sess:
+        sess.create_guild(guild.id)
 
 @event
 async def on_guild_remove(guild):
-    with db.connect() as (conn, cur):
-        cur.execute("DELETE FROM servers WHERE server_id = %s CASCADE;", [guild.id])
-        conn.commit()
-
+    with db.Session() as sess:
+        sess.delete_guild(guild.id)
 
 @event
 async def on_message(message):
@@ -147,7 +158,6 @@ async def on_message(message):
             if cmd.is_banned():
                 raise CommandPermissionError(cmd, "You are banned from using this command.")
             await cmd.run()
-
 
 @client.event
 async def on_error(event_name: str, *args, **kwargs):
@@ -202,20 +212,3 @@ async def _send_traceback(tb):
     if not bot.debug:
         for msg in split_message(tb, 1994):
             await bot.owner.send(f"```{msg}```")
-
-
-# Database setup and test.
-if not db.setup(config_ini):
-    raise InitializationError(
-        f"Failed to connect to the database. Be sure that your database settings in {config_ini} are properly set up.")
-try:
-    with db.connect():
-        pass
-except:
-    raise InitializationError("Failed to connect to the database. Is the hostname correct, and is the database online?")
-
-# Import all commands.
-for file in [cmd_dir + f for f in os.listdir(cmd_dir)]:
-    if os.path.isfile(file) and not file.endswith('__init__.py'):
-        package = file.replace('/', '.')[:-3]
-        _ = import_module(package)
