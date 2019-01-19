@@ -1,7 +1,8 @@
 
 from linkbot.utils.cmd_utils import *
+from linkbot.commands.cmd_info_channel import get_guild_info_channel
 from linkbot.utils.misc import english_listing, parse_date
-from linkbot.utils.search import get_guild_info_channel, search_members, resolve_search_results
+from linkbot.utils.search import search_members, resolve_search_results
 from datetime import date, datetime
 
 
@@ -30,7 +31,7 @@ async def birthday(cmd: Command):
         raise CommandSyntaxError(cmd, "Invalid subcommand.")
 
 
-async def birthday_list(cmd):
+async def birthday_list(cmd: Command):
     now = datetime.now()
     with db.Session() as sess:
         results = sess.get_guild_birthdays(cmd.guild.id)
@@ -44,10 +45,10 @@ async def birthday_list(cmd):
         raise CommandError(cmd, "I don't know anyone's birthdays yet.")
     bdays.sort(key=lambda x: x[1])
 
-    send_msg = ""
-    for (p, b) in bdays:
-        send_msg += f"{p.display_name}: {b.strftime('%B %d')}\n"
-    await cmd.channel.send(send_msg)
+    await cmd.channel.send(embed=bot.embed(
+        c=discord.Color.purple(),
+        title=f"Birthdays for {cmd.guild.name}",
+        description="\n".join(f"{p.display_name}: {b.strftime('%B %d')}" for (p, b) in bdays)))
 
 
 @restrict(ADMIN_ONLY)
@@ -102,7 +103,10 @@ async def birthday_check():
                     names = [guild.get_member(m_id).display_name for m_id in m_ids]
                     people = english_listing(names)
                     channel = get_guild_info_channel(guild)
-                    await channel.send(f"Happy birthday, {people}!")
+                    await channel.send(f"{emoji.Symbol.congratulations}", embed=bot.embed(
+                        c=discord.Color.purple(),
+                        footer_text=f"Love, Link Bot {emoji.Symbol.heart}",
+                        title=f"{emoji.Symbol.birthday} Happy Birthday to {people}! {emoji.Symbol.cake}"))
                     sess.set_birthday_recognition(guild.id, m_ids)
         await asyncio.sleep(900)
 

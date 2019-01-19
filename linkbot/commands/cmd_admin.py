@@ -32,7 +32,6 @@ async def admin(cmd: Command):
 async def admin_list(cmd):
     with db.Session() as sess:
         admin_ids = sess.get_guild_admins(cmd.guild.id)
-        print(admin_ids)
         admins = [cmd.guild.get_member(x) for x in admin_ids]
     if cmd.guild.owner not in admins:
         admins.append(cmd.guild.owner)

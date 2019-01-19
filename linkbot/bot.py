@@ -14,7 +14,7 @@ from linkbot.errors import *
 from linkbot.utils.ini import Ini
 from linkbot.utils import emoji
 from linkbot.utils.command import Command
-from linkbot.utils.misc import create_config, split_message, string_search_top_n
+from linkbot.utils.misc import create_config, split_message
 
 
 cmd_dir = 'linkbot/commands/'
@@ -61,6 +61,11 @@ class LinkBot:
             if not db.startup(config_ini):
                 raise InitializationError("Database is unaccessible")
 
+            logging.info("Syncing database settings...")
+            with db.Session() as sess:
+                sess.create_constraints()
+                sess.create_indexes()
+
             logging.info("Loading commands...")
             for file in [cmd_dir + f for f in os.listdir(cmd_dir)]:
                 if os.path.isfile(file) and not file.endswith('__init__.py'):
@@ -87,9 +92,9 @@ class LinkBot:
 
 
     @staticmethod
-    def embed(c: discord.Color, ft: str="", **kwargs):
+    def embed(c: discord.Color, footer_text: str=None, **kwargs):
         return discord.Embed(color=c, **kwargs) \
-            .set_footer(text=ft if ft else client.user.display_name, icon_url=client.user.avatar_url)
+            .set_footer(text=footer_text if footer_text else client.user.display_name, icon_url=client.user.avatar_url)
 
 
 client = discord.Client()
@@ -121,12 +126,11 @@ async def on_ready():
     else:
         await client.change_presence(activity=discord.Game(name=f'{bot.prefix}help'))
 
-    if bot.debug:
-        logging.info('Syncing members...')
-        with db.Session() as sess:
-            for guild in client.guilds:
-                sess.create_guild(guild.id)
-                sess.sync_members(guild.id, [m.id for m in guild.members])
+    logging.info('Syncing members...')
+    with db.Session() as sess:
+        for guild in client.guilds:
+            sess.create_guild(guild.id)
+            sess.sync_members(guild.id, [m.id for m in guild.members])
 
     logging.info('LinkBot is ready.')
 
@@ -170,7 +174,7 @@ async def on_error(event_name: str, *args, **kwargs):
 
         if etype is CommandSyntaxError:
             import linkbot.utils.menu as menu
-            from linkbot.commands.Help import send_help
+            from linkbot.commands.cmd_help import send_help
 
             async def req_help(_r, _u):
                 await send_help(ch, e.cmd.command_arg)

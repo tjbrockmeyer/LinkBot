@@ -19,6 +19,15 @@ class Symbol:
     arrow_up_small = "🔼"
     arrow_down_small = "🔽"
 
+    heart = "❤"
+    information_source = "ℹ"
+    cake = "🍰"
+    birthday = "🎂"
+    confetti_ball = "🎊"
+    congratulations = "㊗"
+    beers = "🍻"
+
+
 
 async def send_success(message):
     await message.add_reaction(emoji=Symbol.white_check_mark)

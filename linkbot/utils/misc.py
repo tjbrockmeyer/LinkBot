@@ -2,9 +2,6 @@
 import os
 import json
 from datetime import datetime
-from fuzzywuzzy import process
-from fuzzywuzzy.fuzz import partial_ratio
-from functools import reduce
 from typing import List, Any
 
 
@@ -18,12 +15,6 @@ def load_json(filepath: str):
         return {}
     with open(filepath, 'r') as f:
         return json.load(f)
-
-
-def string_search_top_n(query: str, choices: List[str], n: int=5):
-    l = process.extract(query, choices, limit=n, scorer=partial_ratio)
-    diff = [l[0][1] - r[1] for r in l]
-    return [l[i] for i, v in enumerate(diff) if v <= 20]
 
 
 def format_as_column(content: str, column_length: int, alignment: int=-1):

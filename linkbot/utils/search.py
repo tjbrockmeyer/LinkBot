@@ -1,23 +1,26 @@
 
 import discord
-import asyncio
 import linkbot.utils.database as db
 import linkbot.utils.emoji as emoji
 import linkbot.utils.menu as menu
-from linkbot.utils.misc import split_message, string_search_top_n
-from linkbot.bot import LinkBot, client
-from typing import Callable, List, Any, Coroutine, Union
+from linkbot.utils.misc import split_message
+from linkbot.bot import LinkBot
+from fuzzywuzzy import process
+import fuzzywuzzy.fuzz as fuzz
+from typing import Callable, List, Any, Coroutine
 
 
-def async_lambda(func):
-    def wrapper(*args, **kwargs):
-        asyncio.ensure_future(func(*args, **kwargs), loop=client.loop)
-    return wrapper
+def string_search_top_n(query: str, choices: List[str], n: int=5):
+    l = process.extract(query, choices, limit=n, scorer=fuzz.ratio)
+    print(l)
+    diff = [l[0][1] - r[1] for r in l]
+    return [l[i] for i, v in enumerate(diff) if v <= 20]
 
 
-def hasSingleMatch(results):
-    print(results)
-    return (len(results) == 1 and results[0][1] > 65) or (results[0][1] == 100 and results[1][1] < 100)
+def hasSingleMatch(results, query):
+    return results[0][0].lower() == query.lower() or \
+           (len(results) == 1 and results[0][1] > 65) or \
+           (results[0][1] == 100 and results[1][1] < 100)
 
 
 async def split_and_send_message(target: discord.abc.Messageable, message: str, maxlength: int=2000):
@@ -29,7 +32,7 @@ def search_members(query, guild):
     l = [m.name for m in guild.members]
     l += [m.nick for m in guild.members if m.nick]
     l = string_search_top_n(query, l, n=5)
-    if hasSingleMatch(l):
+    if hasSingleMatch(l, query):
         return [guild.get_member_named(l[0][0])]
     members = [guild.get_member_named(name_ratio[0]) for name_ratio in l]
     seen = set()
@@ -54,29 +57,25 @@ def search_channels(query: str, guild: discord.Guild, channel_type: str='tvc') -
     if 'c' in channel_type:
         channel_types.append(discord.CategoryChannel)
 
-    channels = [c for c in guild.channels if type(c) in channel_types]
-    l = [m.name for m in channels]
+    channels = {c.name: c for c in guild.channels if type(c) in channel_types}
+    l = string_search_top_n(query, [c for c in channels.keys()], n=5)
+    if hasSingleMatch(l, query):
+        return [channels[l[0][0]]]
+    return [channels[c[0]] for c in l]
+
+
+
+
+def search_roles(query: str, guild: discord.Guild, include_ateveryone=False) -> List[discord.Role]:
+    roles = {r.name: r for r in guild.roles}
+    if not include_ateveryone:
+        l = [r.name for r in guild.roles if r != guild.default_role]
+    else:
+        l = [r.name for r in guild.roles]
     l = string_search_top_n(query, l, n=5)
-    if hasSingleMatch(l):
-        for c in channels:
-            if c.name == l[0][0]:
-                return [c]
-    l = [i[0] for i in l]
-    channels = [c for c in channels if c.name in l]
-    return channels
-
-
-
-
-def search_roles(query: str, guild: discord.Guild) -> List[discord.Role]:
-    l = [m.name for m in guild.roles]
-    l = string_search_top_n(query, l, n=5)
-    if hasSingleMatch(l):
-        for c in guild.roles:
-            if c.name == l[0][0]:
-                return [c]
-    l = [i[0] for i in l]
-    return [c for c in guild.roles if c.name in l]
+    if hasSingleMatch(l, query):
+        return [roles[l[0][0]]]
+    return [roles[r[0]] for r in l]
 
 
 
@@ -121,10 +120,4 @@ async def resolve_search_results(
                 title=f"By '{search_query}', did you mean...?"))
             .set_options([
                 menu.Option(emoji.Letter.alphabet[i], formatter(r), func=resolver(r), close=True)
-                for i, r in enumerate(results)] + [menu.Option(emoji.Symbol.x, "Close", close=True)]))
-
-
-def get_guild_info_channel(guild: discord.Guild):
-    with db.Session() as sess:
-        channel_id = sess.get_info_channel(guild.id)
-    return guild.get_channel(channel_id) if channel_id else guild.system_channel
+                for i, r in enumerate(results)] + [menu.Option(emoji.Symbol.x, "*none of the above*", close=True)]))

@@ -21,7 +21,7 @@ _delay_regex = re.compile(r"(?:(?:(\d+)d ?)|(?:(\d+)h ?)|(?:(\d+)m ?)|(?:(\d+)s 
 async def remind(cmd: Command):
     if cmd.args[0] == 'purge':
         with db.Session() as sess:
-            sess.delete_reminders_by_user(cmd.author.id)
+            sess.delete_reminders_for_user(cmd.author.id)
         await send_success(cmd.message)
         return
 
@@ -91,7 +91,7 @@ async def remind_loop():
             reminders = sess.get_reminders_before(min_time)
             if reminders:
                 ids = [r[0] for r in reminders]
-                sess.delete_reminders_by_ids(ids)
+                sess.delete_reminders_with_ids(ids)
         for (_, remindee_id, remind_at, reason) in reminders:
             remindee = client.get_user(remindee_id)
             client.loop.create_task(remind_soon(remindee, remind_at, reason))

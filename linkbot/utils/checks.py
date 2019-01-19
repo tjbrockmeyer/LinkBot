@@ -10,8 +10,7 @@ def is_admin(member: discord.Member):
     if is_bot_owner(member) or is_server_owner(member):
         return True
     with db.Session() as sess:
-        cur.execute("SELECT user_id FROM admins WHERE server_id = %s AND user_id = %s;", [member.guild.id, member.id])
-        if cur.fetchone() is not None:
+        if sess.get_member_is_admin(member.guild.id, member.id):
             return True
     return False
 

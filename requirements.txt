@@ -2,4 +2,5 @@ discord-rewrite
 requests
 gitpython
 neo4j
+neobolt
 fuzzywuzzy[speedup]

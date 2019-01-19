@@ -18,7 +18,9 @@ async def entryrole(cmd: Command):
         if not r_id:
             raise CommandError(cmd, 'There is not an entry level role set for this server.')
         role = discord.utils.get(cmd.guild.roles, id=r_id)
-        await cmd.channel.send(f'Entry level role: `{role}`')
+        await cmd.channel.send(embed=bot.embed(
+            c=discord.Color.blurple(),
+            title=f"Entry Role for {cmd.guild.name}\n{emoji.Symbol.information_source} {role.name}"))
 
     elif cmd.args[0] == 'set':
         cmd.shiftargs()

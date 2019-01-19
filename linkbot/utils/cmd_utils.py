@@ -11,6 +11,7 @@ from linkbot.utils.emoji import send_success
 from linkbot.utils.command import Command, CommandInfo
 from typing import Optional, List, Tuple
 
+
 DISABLE = 1
 SERVER_ONLY = 2
 OWNER_ONLY = 4
@@ -90,7 +91,7 @@ def command(syntax: List[str],
         @wraps(func)
         async def wrapper(cmd: Command, *args, **kwargs):
             if help_subcommand and cmd.args and cmd.args[0] == 'help':
-                from linkbot.commands.Help import send_help
+                from linkbot.commands.cmd_help import send_help
                 cmd.args = [cmd.command_arg]
                 cmd.argstr = cmd.command_arg
                 await send_help(cmd.channel, cmd.command_arg)
@@ -114,9 +115,7 @@ def command(syntax: List[str],
         bot.commands[n] = cmd_info
         for x in a:
             bot.commands[x] = cmd_info
+        with db.Session() as sess:
+            sess.create_command(n)
         return wrapper
     return decorator
-
-
-def _usrepl(s):
-    return s.replace('_', ' ')

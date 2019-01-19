@@ -47,29 +47,19 @@ class Session:
 
     # MANAGE database calls
 
-    def constraints(self):
-        """ Run the configured constraints for the database. """
+    def create_constraints(self):
         self.s.run("CREATE CONSTRAINT ON (u:User) ASSERT u.id IS UNIQUE")
         self.s.run("CREATE CONSTRAINT ON (g:Guild) ASSERT g.id IS UNIQUE")
         self.s.run("CREATE CONSTRAINT ON (q:Quote) ASSERT q.ref IS UNIQUE")
+        self.s.run("CREATE CONSTRAINT ON (c:Command) ASSERT c.name IS UNIQUE")
+
+    def create_indexes(self):
         self.s.run("CREATE INDEX ON :User(birthday)")
         self.s.run("CREATE INDEX ON :Reminder(at)")
 
-    def create_guild(self, g_id):
-        """ Create a guild object with the given guild id. """
-
-        self.s.run("MERGE (:Guild {id: {g_id}})", g_id=g_id)
-
-    def delete_guild(self, g_id):
-        """ Delete a guild object with the given id. This will delete all connected information. """
-
-        self.s.run(
-            "MATCH (g:Guild {id: 1001})--(n)\n"
-            "DETACH DELETE g, n", g_id=g_id)
-
     def sync_members(self, g_id, m_ids):
-        """ Members not in the list will be disconnected, and members in the list will be created and/or connected
-            with the given guild."""
+        """ Members in the list will be created and/or connected with the given guild, and
+            members not in the list will be disconnected. """
 
         self.s.run(
             "MATCH (g:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(u:User)\n" 
@@ -79,6 +69,23 @@ class Session:
             "DELETE r\n"
             "CREATE (m)-[:OLD_MEMBER_OF]->(g)", g_id=g_id, m_ids=m_ids)
         self.create_members(g_id, m_ids)
+
+    def create_command(self, cmd_name):
+        """ Create a node for the given command if it does not already exist. """
+
+        self.s.run("MERGE (:Command {name: {cmd_name}})", cmd_name=cmd_name)
+
+    def create_guild(self, g_id):
+        """ Create a guild object with the given guild id if it does not already exist. """
+
+        self.s.run("MERGE (:Guild {id: {g_id}})", g_id=g_id)
+
+    def delete_guild(self, g_id):
+        """ Delete a guild object with the given id. This will delete all connected information. """
+
+        self.s.run(
+            "MATCH (g:Guild {id: 1001})--(n)\n"
+            "DETACH DELETE g, n", g_id=g_id)
 
     def create_members(self, g_id, m_ids):
         """ Create user and member objects from the given list of user ids with links to the given guild. """
@@ -123,7 +130,7 @@ class Session:
 
     # ADMIN database calls
 
-    def get_user_is_admin(self, g_id, m_id):
+    def get_member_is_admin(self, g_id, m_id):
         """ Return true if the user has an admin relationship to the server, false otherwise. """
 
         result = self.s.run(
@@ -237,7 +244,7 @@ class Session:
 
     # REMINDER database calls
 
-    def delete_reminders_by_user(self, u_id):
+    def delete_reminders_for_user(self, u_id):
         """ Deletes all reminders that are associated with the given user. """
 
         self.s.run(
@@ -261,12 +268,38 @@ class Session:
             "RETURN ID(r), u.id, r.at, r.reason", dt=dtime)
         return results.values() if results else []
 
-    def delete_reminders_by_ids(self, obj_ids):
+    def delete_reminders_with_ids(self, obj_ids):
         """ Delete all reminders that have object ids present in the given list. """
 
         self.s.run(
             "MATCH (r:Reminder)-[reminding:REMINDING]->(:User)\n"
             "WHERE ID(r) in {ids}\n"
             "DELETE r, reminding", ids=obj_ids)
+
+    # CMDBAN database calls
+
+    def create_command_ban(self, g_id, m_id, cmd_name):
+        """ Ban the given member of the given guild from using the given command. """
+
+        self.s.run(
+            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
+            "MATCH (c:Command {name: {cmd_name}})\n"
+            "MERGE (m)-[:BANNED_FROM_USING]->(c)", g_id=g_id, m_id=m_id, cmd_name=cmd_name)
+
+    def delete_command_ban(self, g_id, m_id, cmd_name):
+        """ Ban the given member of the given guild from using the given command. """
+
+        self.s.run(
+            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
+            "MATCH (m)-[r:BANNED_FROM_USING]->(c:Command {name: {cmd_name}})\n"
+            "DELETE r", g_id=g_id, m_id=m_id, cmd_name=cmd_name)
+
+    def get_member_is_banned_from_command(self, g_id, m_id, cmd_name):
+        """ Ban the given member of the given guild from using the given command. """
+
+        self.s.run(
+            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
+            "MATCH (m)-[r:BANNED_FROM_USING]->(c:Command {name: {cmd_name}})\n"
+            "RETURN count(r) > 0 as c", g_id=g_id, m_id=m_id, cmd_name=cmd_name)
 
 
