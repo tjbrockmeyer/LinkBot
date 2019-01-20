@@ -60,12 +60,11 @@ class Session:
     def create_constraints(self):
         self.s.run("CREATE CONSTRAINT ON (u:User) ASSERT u.id IS UNIQUE")
         self.s.run("CREATE CONSTRAINT ON (g:Guild) ASSERT g.id IS UNIQUE")
-        self.s.run("CREATE CONSTRAINT ON (q:Quote) ASSERT q.ref IS UNIQUE")
-        self.s.run("CREATE CONSTRAINT ON (c:Command) ASSERT c.name IS UNIQUE")
 
     def create_indexes(self):
         self.s.run("CREATE INDEX ON :User(birthday)")
         self.s.run("CREATE INDEX ON :Reminder(at)")
+        self.s.run("CREATE INDEX ON :Quote(ref)")
 
     def delete_node_with_id(self, node_id):
         """ Delete and detach a node using its ID(). """
@@ -84,11 +83,6 @@ class Session:
             "DELETE r\n"
             "CREATE (m)-[:OLD_MEMBER_OF]->(g)", g_id=g_id, m_ids=m_ids)
         self.create_members(g_id, m_ids)
-
-    def create_command(self, cmd_name):
-        """ Create a node for the given command if it does not already exist. """
-
-        self.s.run("MERGE (:Command {name: {cmd_name}})", cmd_name=cmd_name)
 
     def create_guild(self, g_id):
         """ Create a guild object with the given guild id if it does not already exist. """
@@ -297,24 +291,21 @@ class Session:
         """ Ban the given member of the given guild from using the given command. """
 
         self.s.run(
-            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
-            "MATCH (c:Command {name: {cmd_name}})\n"
-            "MERGE (m)-[:BANNED_FROM_USING]->(c)", g_id=g_id, m_id=m_id, cmd_name=cmd_name)
+            "MATCH (g:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
+            "MERGE (m)<-[:CMD_BAN {name: {cmd_name}}]-(g)", g_id=g_id, m_id=m_id, cmd_name=cmd_name)
 
     def delete_command_ban(self, g_id, m_id, cmd_name):
         """ Ban the given member of the given guild from using the given command. """
 
         self.s.run(
-            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
-            "MATCH (m)-[r:BANNED_FROM_USING]->(c:Command {name: {cmd_name}})\n"
+            "MATCH (:Guild {id: {g_id}})-[r:CMD_BAN {name: {cmd_name}}]->(:Member)-[:USER]->(:User {id: {m_id}})\n"
             "DELETE r", g_id=g_id, m_id=m_id, cmd_name=cmd_name)
 
     def get_member_is_banned_from_command(self, g_id, m_id, cmd_name):
         """ Ban the given member of the given guild from using the given command. """
 
         result = self.s.run(
-            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
-            "MATCH (m)-[r:BANNED_FROM_USING]->(c:Command {name: {cmd_name}})\n"
+            "MATCH (:Guild {id: {g_id}})-[r:CMD_BAN {name: {cmd_name}}]->(:Member)-[:USER]->(:User {id: {m_id}})\n"
             "RETURN count(r) > 0 as c", g_id=g_id, m_id=m_id, cmd_name=cmd_name).single()
         return result[0]
 

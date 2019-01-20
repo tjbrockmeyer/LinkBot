@@ -116,7 +116,5 @@ def command(syntax: List[str],
         bot.commands[n] = cmd_info
         for x in a:
             bot.commands[x] = cmd_info
-        with db.Session() as sess:
-            sess.create_command(n)
         return wrapper
     return decorator
