@@ -1,0 +1,3 @@
+; Prevent editor from removing newlines from .md files.
+[*.{md,markdown}]
+trim_trailing_whitespace = false

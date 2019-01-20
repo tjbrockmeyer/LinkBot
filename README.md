@@ -4,25 +4,37 @@ LinkBot is a general-purpose [Discord](http://discordapp.com) bot. He is written
 ([documentation](https://discordpy.readthedocs.io/en/rewrite/api.html)).
 
 ## Some Main Features
-- Per-server Admin setting to restrict sensitive commands.
-- Birthday tracking on a per-server basis. Birthdays can be set/removed by bot Admins.
-- A quote database to store all of your friends' disappointing, out-of-context quotes.
-- The ability to remind users about events via the `remind` command.
-- Youtube video and Google image first-result search embedding.
-- Automatic role-setting for new users in your server.
+- Per-server :crown: Admins to restrict sensitive commands.
+- Per-server :birthday: Birthday tracking. LinkBot will remind a channel of your birthday when it comes around.
+- Per-server :speech_balloon: Quote tracking to store all of your friends' embarassing, disappointing, out-of-context quotes.
+- Per-server :eye_speech_bubble: Topic system that enables users to subscribe to topics they like.
+You can ping topics with a command when you want to post relevant information.
+- A :calendar: reminder system that will DM you when the time comes.
+- Youtube :movie_camera: video and Google :framed_picture: image first-result search embedding.
+- Automatic :family: role-setting for new users in your server.
+- And more!
 
-# Getting Started
-To get LinkBot to run, you'll need a config file. If you run the program once, it will automatically generate one for 
-you. From here, you can read through the file and fill in the required information (it has lots of comments). You will 
-need a bot application and account of your own, and you can get one on the Discord Developer portal 
-[here](https://discordapp.com/developers/applications/).
+## Getting Started
+1. Configuration file  
+If you run the program once, a config file will automatically be generated for you. From here, you can read through
+the file and fill in the required information. It has lots of comments :smile:
+2. Discord API Application and Bot Account  
+You can get both of these at the Discord Developer portal [here](https://discordapp.com/developers/applications/).
+3. Neo4j Database  
+You will need the community server version of Neo4j for the database. You can find it [here](https://neo4j.com/download-center/#panel2-2)
+4. pip requirements  
+Download the dependencies using pip: `pip install -r requirements.txt`  
+As an exception: If you do not have Visual C++ and don't want to get it, you can `pip install fuzzywuzzy` without the `[speedup]`.
 
-You will also need a Google API key (for image and YouTube searches), a Google Custom Search (also required for image 
-search), and a Riot Games API key (for League of Legends game lookup). These are all optional, and if they are not 
-included, the functionality will be automatically disabled.
+Optionally, you will also need:
+- a Google API key (for image and YouTube searches)
+- a Google Custom Search (also required for image search)
+- a Riot Games API key (for League of Legends game lookup)
 
-# Commands
-LinkBot works like any other discord bot: by reacting to user commands. The prefix for commands is stored in the 
+If these are not included, the functionality will be automatically disabled.
+
+## Commands
+LinkBot works like most other discord bots: by reacting to user commands. The prefix for commands is stored in the
 config file, and when LinkBot receives a command in a server that has the prefix attached, or through a direct message 
 with/without the prefix, the associated command function for that command will be run.
 
