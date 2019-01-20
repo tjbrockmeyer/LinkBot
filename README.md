@@ -15,16 +15,16 @@ You can ping topics with a command when you want to post relevant information.
 - And more!
 
 ## Getting Started
-1. Configuration file  
-If you run the program once, a config file will automatically be generated for you. From here, you can read through
-the file and fill in the required information. It has lots of comments :smile:
+1. pip requirements  
+Download the dependencies using pip: `pip install -r requirements.txt`  
+As an exception: If you do not have Visual C++ and don't want to get it, you can `pip install fuzzywuzzy` without the `[speedup]`.
 2. Discord API Application and Bot Account  
 You can get both of these at the Discord Developer portal [here](https://discordapp.com/developers/applications/).
 3. Neo4j Database  
 You will need the community server version of Neo4j for the database. You can find it [here](https://neo4j.com/download-center/#panel2-2)
-4. pip requirements  
-Download the dependencies using pip: `pip install -r requirements.txt`  
-As an exception: If you do not have Visual C++ and don't want to get it, you can `pip install fuzzywuzzy` without the `[speedup]`.
+4. Configuration file  
+If you run the program once, a config file will automatically be generated for you. From here, you can read through
+the file and fill in the required information. It has lots of comments :smile:
 
 Optionally, you will also need:
 - a Google API key (for image and YouTube searches)

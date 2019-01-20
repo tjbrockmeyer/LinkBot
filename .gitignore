@@ -1,8 +1,9 @@
 # Sensitive information
 config.ini
+*.pem
+*.rdp
 
 # Generated files/directories
-INSTANCE
 .coverage
 cover/
 .idea/
