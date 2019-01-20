@@ -21,6 +21,8 @@ class Symbol:
 
     heart = "❤"
     information_source = "ℹ"
+    crown = "👑"
+    calendar = "📆"
     cake = "🍰"
     birthday = "🎂"
     confetti_ball = "🎊"

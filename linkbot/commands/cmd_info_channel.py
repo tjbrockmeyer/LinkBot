@@ -12,6 +12,11 @@ def get_guild_info_channel(guild: discord.Guild):
 @command([], "", [], name='infochan', show_in_help=False, help_subcommand=False)
 @restrict(ADMIN_ONLY)
 async def info_channel(cmd: Command):
+
+    async def set_channel(c):
+        nonlocal channel
+        channel = c
+
     if not cmd.args:
         with db.Session() as sess:
             channel_id = sess.get_info_channel(cmd.guild.id)
@@ -22,11 +27,13 @@ async def info_channel(cmd: Command):
                       f"{emoji.Symbol.information_source} #{cmd.guild.get_channel(channel_id).name}"))
         else:
             raise CommandError(cmd, "There is currently no registered information channel.")
-    else:
-        async def local_set_info_channel(channel):
-            with db.Session() as sess:
-                sess.set_info_channel(cmd.guild.id, channel.id)
-            await send_success(cmd.message)
 
+    else:
+        channel = None
         results = search_channels(cmd.argstr, cmd.guild, 't')
-        await resolve_search_results(results, cmd.argstr, 'channels', cmd.author, cmd.channel, local_set_info_channel)
+        await resolve_search_results(results, cmd.argstr, 'channels', cmd.author, cmd.channel, set_channel)
+        if not channel:
+            return
+        with db.Session() as sess:
+            sess.set_info_channel(cmd.guild.id, channel.id)
+        await send_success(cmd.message)

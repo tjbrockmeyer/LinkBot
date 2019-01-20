@@ -1,8 +1,10 @@
+
 from linkbot.utils.cmd_utils import *
+from linkbot.utils.search import search_channels, resolve_search_results
 import re
 
 
-_syntax_regex = re.compile(r"(\w+)\s+to\s+(\w+)(?:\s+(exclude|include)\s+((?:\w+)(?:,\s*\w+)*))?")
+_syntax_regex = re.compile(r"([\w\s]+)\s+to\s+([\w\s]+)(?:\s+(exclude|include)\s+((?:[\w\s]+)(?:,\s*[\w\s]+)*))?")
 
 
 @command(
@@ -20,29 +22,33 @@ _syntax_regex = re.compile(r"(\w+)\s+to\s+(\w+)(?:\s+(exclude|include)\s+((?:\w+
 async def move(cmd: Command):
     match = _syntax_regex.match(cmd.argstr)
     if not match:
-        raise CommandSyntaxError(cmd, "Arguments must be in the form of 'channel to channel'.")
+        raise CommandSyntaxError(cmd, "Arguments must be in the form of 'channel1 to channel2'.")
 
-    channels = []
-    for c in [match.group(1), match.group(2)]:
-        try:
-            chn_id = (int(c))
-            if chn_id <= len(cmd.guild.voice_channels):
-                channels.append(cmd.guild.voice_channels[chn_id])
-            else:
-                raise CommandError(cmd, f"Voice channel id `{c}` is out of range.")
-        except ValueError:
-            chn = c.strip().lower()
-            x = [(i, y) for (i, y) in enumerate(cmd.guild.voice_channels) if y.name.lower().startswith(chn)]
-            if len(x) > 0:
-                channels.append(cmd.guild.voice_channels[x[0][0]])
-            else:
-                raise CommandError(cmd, f"`{c}` is not a prefix for an existing voice channel in this server.")
+    g1, g2 = match.group(1), match.group(2)
+    r1 = search_channels(g1, cmd.guild, 'v')
+    r2 = search_channels(g2, cmd.guild, 'v')
+    c1, c2 = None, None
+
+    async def resolve1(channel):
+        nonlocal c1
+        c1 = channel
+
+    async def resolve2(channel):
+        nonlocal c2
+        c2 = channel
+
+    await resolve_search_results(r1, g1, 'channels', cmd.author, cmd.channel, resolve1)
+    if not c1:
+        return
+    await resolve_search_results(r2, g2, 'channels', cmd.author, cmd.channel, resolve2)
+    if not c2:
+        return
 
     whitelist = match.group(3) == "include"
     names = [n.lower().strip() for n in match.group(4).split(',')] if match.group(3) else ['/*--*/']
-    for m in channels[0].members:
+    for m in c1.members:
         for n in names:
             in_list = m.display_name.lower().startswith(n)
             if in_list and whitelist or not in_list and not whitelist:
-                await m.move_to(channels[1])
+                await m.move_to(c2)
     await send_success(cmd.message)

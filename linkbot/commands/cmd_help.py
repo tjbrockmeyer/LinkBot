@@ -43,16 +43,16 @@ async def cmd_help(cmd: Command):
 async def send_help(dest, helpcmd=None):
     if helpcmd:
         cmd_info = bot.commands[helpcmd]
-        embed = bot.embed(discord.Color.dark_green(),
-                          title="**__" + cmd_info.command + "__**",
+        embed = bot.embed(discord.Color.green(),
+                          title="**__" + cmd_info.command_name + "__**",
                           description=cmd_info.description)
         cmd_info.embed_examples(embed, bot.prefix, cmd_as_code=False)
         await dest.send(embed=embed)
     else:
-        embed = bot.embed(discord.Color.dark_green(),
+        embed = bot.embed(discord.Color.green(),
                           title="__General Command Help__",
                           description=_help_header)
-        for x in sorted(list(set([y for y in bot.commands.values() if y.show_in_help])), key=lambda z: z.command):
+        for x in sorted(list(set([y for y in bot.commands.values() if y.show_in_help])), key=lambda z: z.command_name):
             x.embed_syntax(embed, bot.prefix, mk_down='`', title_mk_down='__', sep='\n', inline=False)
         await dest.send(embed=embed)
 

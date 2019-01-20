@@ -12,6 +12,11 @@ from linkbot.utils.search import search_roles, resolve_search_results
 )
 @restrict(SERVER_ONLY)
 async def entryrole(cmd: Command):
+
+    async def set_role(r):
+        nonlocal role
+        role = r
+
     if not cmd.args:
         with db.Session() as sess:
             r_id = sess.get_entry_role(cmd.guild.id)
@@ -27,13 +32,14 @@ async def entryrole(cmd: Command):
         if not cmd.args:
             raise CommandSyntaxError(cmd, "You must provide a role in the server to become the entry level role.")
 
-        async def local_set_entryrole(role):
-            with db.Session() as sess:
-                sess.set_entry_role(cmd.guild.id, role.id)
-            await send_success(cmd.message)
-
+        role = None
         roles = search_roles(cmd.argstr, cmd.guild)
-        await resolve_search_results(roles, cmd.argstr, 'roles', cmd.author, cmd.channel, local_set_entryrole)
+        await resolve_search_results(roles, cmd.argstr, 'roles', cmd.author, cmd.channel, set_role)
+        if not role:
+            return
+        with db.Session() as sess:
+            sess.set_entry_role(cmd.guild.id, role.id)
+        await send_success(cmd.message)
 
     elif cmd.args[0] == 'remove':
         with db.Session() as sess:

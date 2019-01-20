@@ -69,15 +69,8 @@ class Command:
         self.is_valid = self.info is not None
 
     def is_banned(self):
-        # TODO: Fix when cmd bans are working
-        return False
-
-        if not self.is_valid:
-            return False
         with db.Session() as sess:
-            cur.execute("SELECT command FROM cmdbans WHERE server_id = %s AND user_id = %s AND command = %s;",
-                        [self.guild.id, self.author.id, self.info.command])
-            return cur.fetchone() is not None
+            return sess.get_member_is_banned_from_command(self.guild.id, self.author.id, self.info.command_name)
 
     async def run(self):
         await self.info.func(self)
@@ -104,7 +97,7 @@ class CmdExample:
 class CommandInfo:
     """ Class containing info about a particular command. """
     def __init__(self, name, func, syntax, description, examples, aliases, show_in_help):
-        self.command = name
+        self.command_name = name
         self.func = func
         self.syntax = syntax
         self.description = description
@@ -122,7 +115,7 @@ class CommandInfo:
         :return: The syntax cases formatted according to the parameters.
         """
         fn = lambda full, syn: full + "{sep}{mk}{syn}{mk}".format(sep=sep, mk=mk_down,
-                                                                  syn=syn.format(c=prefix + self.command))
+                                                                  syn=syn.format(c=prefix + self.command_name))
         return reduce(fn, self.syntax, '')[len(sep):]
 
     def get_examples_with_format(self, prefix, cmd_as_code=True, cmd_ex_sep='\n\t', sep='\n'):
@@ -151,7 +144,7 @@ class CommandInfo:
         :param bool inline: Should this embed be created inline?
         """
         embed.add_field(
-            name="{mk}{cmd}{mk}".format(cmd=' | '.join([self.command] + self.aliases), mk=title_mk_down),
+            name="{mk}{cmd}{mk}".format(cmd=' | '.join([self.command_name] + self.aliases), mk=title_mk_down),
             value=self.get_syntax_with_format(prefix, mk_down, sep), inline=inline)
 
     def embed_examples(self, embed, prefix, cmd_as_code=True):
@@ -164,5 +157,5 @@ class CommandInfo:
         """
         for ex in self.examples:
             embed.add_field(name="{mk}{cmd}{mk}"
-                            .format(cmd=ex.cmd.format(c=prefix + self.command),
+                            .format(cmd=ex.cmd.format(c=prefix + self.command_name),
                                     mk='`' if cmd_as_code else ''), value=ex.effect, inline=False)

@@ -35,8 +35,10 @@ async def admin_list(cmd):
         admins = [cmd.guild.get_member(x) for x in admin_ids]
     if cmd.guild.owner not in admins:
         admins.append(cmd.guild.owner)
-    admin_str = "Admins: " + english_listing([a.display_name for a in admins])
-    await cmd.channel.send(admin_str)
+    await cmd.channel.send(embed=bot.embed(
+        c=discord.Color.gold(),
+        title="Admins",
+        description=f"{emoji.Symbol.crown} {english_listing([a.display_name for a in admins])}"))
 
 
 @restrict(ADMIN_ONLY)

@@ -79,7 +79,10 @@ async def remind(cmd: Command):
         outstring += f' about "{reason}".'
     else:
         outstring += '.'
-    await cmd.channel.send(outstring)
+    await cmd.channel.send(embed=bot.embed(
+        c=discord.Color.blue(),
+        title="Reminder",
+        description=outstring))
 
 
 @background_task
@@ -102,6 +105,12 @@ async def remind_soon(remindee, remind_at, reason):
     delta_time = (remind_at - datetime.now()).total_seconds()
     await asyncio.sleep(delta_time)
     if reason == '':
-        await remindee.send(f'This is your reminder {remindee.name}!')
+        await remindee.send(embed=bot.embed(
+            c=discord.Color.blue(),
+            title="Reminder",
+            description=f'{emoji.Symbol.calendar} This is your reminder {remindee.name}!'))
     else:
-        await remindee.send(f'I\'m reminding you about "{reason}", {remindee.name}!')
+        await remindee.send(embed=bot.embed(
+            c=discord.Color.blue(),
+            title="Reminder",
+            description=f'{emoji.Symbol.calendar} I\'m reminding you about "{reason}", {remindee.name}!'))

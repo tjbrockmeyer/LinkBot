@@ -57,6 +57,11 @@ class Session:
         self.s.run("CREATE INDEX ON :User(birthday)")
         self.s.run("CREATE INDEX ON :Reminder(at)")
 
+    def delete_node_with_id(self, node_id):
+        """ Delete and detach a node using its ID(). """
+
+        self.s.run("MATCH (n) WHERE ID(n) = {id} DETACH DELETE n", id=node_id)
+
     def sync_members(self, g_id, m_ids):
         """ Members in the list will be created and/or connected with the given guild, and
             members not in the list will be disconnected. """
@@ -143,8 +148,8 @@ class Session:
 
         results = self.s.run(
             "MATCH (:Guild {id: {g_id}})<-[:ADMIN_OF]-(:Member)-[:USER]->(u:User)\n"
-            "RETURN u.id", g_id=g_id)
-        return [x[0] for x in results.records()] if results else []
+            "RETURN collect(u.id)", g_id=g_id)
+        return results.values()[0][0]
 
     def create_admins(self, g_id, m_ids):
         """ Create the admin relationship for members of a given server. """
@@ -171,7 +176,7 @@ class Session:
             "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(u:User)\n"
             "WHERE exists(m.birthday)\n"
             "RETURN u.id, m.birthday", g_id=g_id)
-        return [(x[0], x[1].to_native()) for x in results.records()] if results else []
+        return [(x[0], x[1].to_native()) for x in results.records()]
 
     def set_birthday(self, g_id, m_id, bday):
         """ Set the birthday property for the given member of the given guild. """
@@ -196,8 +201,8 @@ class Session:
         results = self.s.run(
             "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member {birthday: {today_y1}})-[:USER]->(u:User)\n"
             "WHERE not exists(m.lastCongrats) OR m.lastCongrats <> {today}\n"
-            "RETURN u.id", g_id=g_id, today=today, today_y1=today_y1)
-        return [x[0] for x in results.records()] if results else []
+            "RETURN collect(u.id)", g_id=g_id, today=today, today_y1=today_y1)
+        return results.values()[0][0]
 
     def set_birthday_recognition(self, g_id, m_ids):
         """ Set the birthday congradulation date to today for the given members of the given server. """
@@ -240,7 +245,7 @@ class Session:
             "MATCH (g:Guild)\n"
             "WHERE exists(g.entryRole)\n"
             "RETURN g.id, g.entryRole")
-        return results.values() if results else []
+        return results.values()
 
     # REMINDER database calls
 
@@ -248,8 +253,8 @@ class Session:
         """ Deletes all reminders that are associated with the given user. """
 
         self.s.run(
-            "MATCH (:User {id: {u_id}})<-[reminding:REMINDING]-(r:Reminder)\n"
-            "DELETE reminding, r", u_id=u_id)
+            "MATCH (:User {id: {u_id}})<-[:REMINDING]-(r:Reminder)\n"
+            "DETACH DELETE r", u_id=u_id)
 
     def create_reminder(self, u_id, remind_at, reason):
         """ Create a reminder that is set to remind the given user at the given time for the given reason. """
@@ -263,18 +268,18 @@ class Session:
         """ Return a tuple (ID, u_id, at, reason) for each reminder that will occur before the given datetime. """
 
         results = self.s.run(
-            "MATCH (r:Reminder)-[reminding:REMINDING]->(u:User)\n"
+            "MATCH (r:Reminder)-[:REMINDING]->(u:User)\n"
             "WHERE r.at < {dt}\n"
             "RETURN ID(r), u.id, r.at, r.reason", dt=dtime)
-        return results.values() if results else []
+        return results.values()
 
     def delete_reminders_with_ids(self, obj_ids):
         """ Delete all reminders that have object ids present in the given list. """
 
         self.s.run(
-            "MATCH (r:Reminder)-[reminding:REMINDING]->(:User)\n"
+            "MATCH (r:Reminder)-[:REMINDING]->(:User)\n"
             "WHERE ID(r) in {ids}\n"
-            "DELETE r, reminding", ids=obj_ids)
+            "DETACH DELETE r", ids=obj_ids)
 
     # CMDBAN database calls
 
@@ -297,9 +302,75 @@ class Session:
     def get_member_is_banned_from_command(self, g_id, m_id, cmd_name):
         """ Ban the given member of the given guild from using the given command. """
 
-        self.s.run(
+        result = self.s.run(
             "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
             "MATCH (m)-[r:BANNED_FROM_USING]->(c:Command {name: {cmd_name}})\n"
-            "RETURN count(r) > 0 as c", g_id=g_id, m_id=m_id, cmd_name=cmd_name)
+            "RETURN count(r) > 0 as c", g_id=g_id, m_id=m_id, cmd_name=cmd_name).single()
+        return result[0]
 
+
+    # QUOTE database calls
+
+    def get_quote_with_ref(self, g_id, ref):
+        """ Return the quote tuple (u.id, q.text, q.ref) from the given guild that is
+            registered with the given reference. """
+
+        result = self.s.run(
+            "MATCH (q:Quote {ref: {ref}})<-[:SAID]-(m:Member)-[:MEMBER_OF]->(:Guild {id: {g_id}})\n"
+            "MATCH (m)-[:USER]->(u:User)\n"
+            "RETURN u.id, q.text, ID(q) as id", g_id=g_id, ref=ref).single()
+        return result
+
+    def get_quotes_from_member(self, g_id, m_id):
+        """ Return all quote tuples (q.text, q.ref) that have been said by the given member of the given guild. """
+
+        results = self.s.run(
+            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
+            "MATCH (m)-[:SAID]->(q:Quote)\n"
+            "RETURN q.text, q.ref", g_id=g_id, m_id=m_id)
+        return results.values()
+
+    def get_quote_starts_with(self, g_id, m_id, starts_with):
+        """ Return a quote tuple of (q.text, q.ref) from the given member of the given guild
+            that starts with the given text. """
+
+        result = self.s.run(
+            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
+            "MATCH (m)-[:SAID]->(q:Quote)\n"
+            "WHERE q.text STARTS WITH {starts_with}\n"
+            "RETURN q.text, q.ref, ID(q) as id", g_id=g_id, m_id=m_id, starts_with=starts_with).single()
+        return result
+
+    def get_guild_quotes(self, g_id):
+        """ Return all quotes for the given guild. """
+
+        results = self.s.run(
+            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:SAID]->(q:Quote)\n"
+            "MATCH (m)-[:USER]->(u:User)\n"
+            "RETURN u.id, q.text, q.ref", g_id=g_id)
+        return results.values()
+
+    def create_quote(self, g_id, m_id, text):
+        """ Create a quote object and connect it to the given member of the given guild. """
+
+        self.s.run(
+            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
+            "MERGE (m)-[:SAID]->(:Quote {text: {text}})", g_id=g_id, m_id=m_id, text=text)
+
+    def set_quote_reference(self, g_id, m_id, starts_with, ref):
+        """ Set the reference text for the quote by the given member of the given guild that
+            starts with the given text to the given reference. """
+
+        self.s.run(
+            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: {m_id}})\n"
+            "MATCH (m)-[:SAID]->(q:Quote)\n"
+            "WHERE q.text STARTS WITH {starts_with}\n"
+            "SET q.ref = {ref}", g_id=g_id, m_id=m_id, starts_with=starts_with, ref=ref)
+
+    def remove_quote_reference(self, g_id, ref):
+        """ Remove the reference for the quote with the given reference from the given guild. """
+
+        self.s.run(
+            "MATCH (q:Quote {ref: {ref}})<-[:SAID]-(:Member)-[:MEMBER_OF]->(:Guild {id: {g_id}})\n"
+            "REMOVE q.ref", g_id=g_id, ref=ref).single()
 

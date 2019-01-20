@@ -1,5 +1,6 @@
 
 from linkbot.utils.cmd_utils import *
+from linkbot.utils.search import search_members, resolve_search_results
 
 
 @command([], "", [], name='cmdban', show_in_help=False, help_subcommand=False)
@@ -12,14 +13,24 @@ async def command_ban(cmd: Command):
         return
     if cmd.args[0] not in bot.commands.keys():
         raise CommandError(cmd, f"`{cmd.args[0]} is not a valid command.")
-    if not cmd.message.mentions:
-        raise CommandError(cmd, "You must specify someone to ban from the command.")
-    if cmd.message.mentions[0] == cmd.guild.owner:
-        raise CommandError(cmd, "You cannot ban the server owner from commands.")
-    if cmd.message.mentions[0] == cmd.author:
+
+    async def set_member(m):
+        nonlocal member
+        member = m
+
+    member = None
+    bancmd = cmd.args[0]
+    cmd.shiftargs()
+    results = search_members(cmd.argstr, cmd.guild)
+    await resolve_search_results(results, cmd.argstr, 'members', cmd.author, cmd.channel, set_member)
+    if not member:
+        return
+    if member == cmd.author:
         raise CommandPermissionError(cmd, "You cannot ban yourself.")
+    if member == cmd.guild.owner:
+        raise CommandError(cmd, "You cannot ban the server owner from commands.")
     with db.Session() as sess:
-        sess.create_command_ban(cmd.guild.id, cmd.author.id, cmd.args[0])
+        sess.create_command_ban(cmd.guild.id, member.id, bancmd)
     await send_success(cmd.message)
 
 
@@ -27,10 +38,22 @@ async def command_ban(cmd: Command):
 async def command_unban(cmd: Command):
     if cmd.args[0] not in bot.commands.keys():
         raise CommandError(cmd, f"`{cmd.args[0]} is not a valid command.")
-    if not cmd.message.mentions:
-        raise CommandError(cmd, "You must specify someone to unban from the command.")
-    if cmd.message.mentions[0] == cmd.author:
-        raise CommandPermissionError(cmd, "You cannot unban yourself.")
+
+    async def set_member(m):
+        nonlocal member
+        member = m
+
+    member = None
+    bancmd = cmd.args[0]
+    cmd.shiftargs()
+    results = search_members(cmd.argstr, cmd.guild)
+    await resolve_search_results(results, cmd.argstr, 'members', cmd.author, cmd.channel, set_member)
+    if not member:
+        return
+    if member == cmd.author:
+        raise CommandPermissionError(cmd, "You cannot ban yourself.")
+    if member == cmd.guild.owner:
+        raise CommandError(cmd, "You cannot ban the server owner from commands.")
     with db.Session() as sess:
-        sess.delete_command_ban(cmd.guild.id, cmd.author.id, cmd.args[0])
+        sess.delete_command_ban(cmd.guild.id, member.id, bancmd)
     await send_success(cmd.message)

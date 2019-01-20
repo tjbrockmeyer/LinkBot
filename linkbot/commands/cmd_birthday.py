@@ -54,6 +54,11 @@ async def birthday_list(cmd: Command):
 @restrict(ADMIN_ONLY)
 @require_args(2)
 async def birthday_set(cmd):
+
+    async def set_member(m):
+        nonlocal member
+        member = m
+
     person_search = cmd.args[0]
     bdayarg = cmd.args[1]
     # if specified that today is the birthday, set it.
@@ -69,28 +74,35 @@ async def birthday_set(cmd):
                 cmd, 'Birthdays must be in the format of TB 09/02, TB 09-02, TB Sep 02 or TB September 02.')
 
     # set the birthday for the server and person.
-    async def local_birthday_set(member):
-        with db.Session() as sess:
-            sess.set_birthday(cmd.guild.id, member.id, bday)
-        await send_success(cmd.message)
-
+    member = None
     bday = date(1, bday.month, bday.day)
     s_results = search_members(person_search, cmd.guild)
-    await resolve_search_results(s_results, person_search, 'members', cmd.author, cmd.channel, local_birthday_set)
+    await resolve_search_results(s_results, person_search, 'members', cmd.author, cmd.channel, set_member)
+    if not member:
+        return
+    with db.Session() as sess:
+        sess.set_birthday(cmd.guild.id, member.id, bday)
+    await send_success(cmd.message)
 
 
 
 @restrict(ADMIN_ONLY)
 @require_args(1)
 async def birthday_remove(cmd):
-    async def local_birthday_remove(member):
-        with db.Session() as sess:
-            sess.remove_birthday(cmd.guild.id, member.id)
-        await send_success(cmd.message)
 
+    async def set_member(m):
+        nonlocal member
+        member = m
+
+    member = None
     person_search = cmd.args[0]
     s_results = search_members(person_search, cmd.guild)
-    await resolve_search_results(s_results, person_search, 'members', cmd.author, cmd.channel, local_birthday_remove)
+    await resolve_search_results(s_results, person_search, 'members', cmd.author, cmd.channel, set_member)
+    if not member:
+        return
+    with db.Session() as sess:
+        sess.remove_birthday(cmd.guild.id, member.id)
+    await send_success(cmd.message)
 
 
 @background_task
