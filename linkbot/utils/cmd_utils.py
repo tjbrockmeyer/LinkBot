@@ -68,6 +68,7 @@ def background_task(func):
 
 
 def on_event(event_name):
+    # For a list of usable events, see each event decorated with the 'event' decorator in bot.py.
     def decorator(func):
         if event_name not in bot.events.keys():
             raise LinkBotError(f"For method {func.__name__}, {event_name} is not a registered event.")

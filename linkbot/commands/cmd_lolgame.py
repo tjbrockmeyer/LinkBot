@@ -15,7 +15,6 @@ from linkbot.utils.cmd_utils import *
          "but you'll need to know the region ID yourself.")
     ]
 )
-@restrict(0)
 @require_args(1)
 async def lolgame(cmd: Command):
     if not bot.riotClient:

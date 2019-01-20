@@ -18,7 +18,7 @@ _syntax_regex = re.compile(r"([\w\s]+)\s+to\s+([\w\s]+)(?:\s+(exclude|include)\s
     ],
     aliases=['migrate']
 )
-@restrict(SERVER_ONLY | ADMIN_ONLY)
+@restrict(ADMIN_ONLY)
 async def move(cmd: Command):
     match = _syntax_regex.match(cmd.argstr)
     if not match:

@@ -110,13 +110,14 @@ async def send_list(dest: discord.abc.Messageable,
     def get_embed():
         e = build_embed()
         e.add_field(name=list_name, value="\n".join(items[page * per_page:min((page + 1) * per_page, len(items))]))
+        e.add_field(name="*__Page__*", value=f"__{page + 1} of {last_page}__")
         return e
 
     def get_options():
         options = []
         if page != 0:
             options.append(prev_page_op)
-        if (page + 1) * per_page < len(items):
+        if (page + 1) < last_page:
             options.append(next_page_op)
         return options
 
@@ -127,8 +128,8 @@ async def send_list(dest: discord.abc.Messageable,
     next_page_op = Option(emoji.Symbol.arrow_down_small, "Next page", func=lambda r, u: change_page(1), refresh=True)
     prev_page_op = Option(emoji.Symbol.arrow_up_small, "Previous page", func=lambda r, u: change_page(-1), refresh=True)
     page = 0
-    menu = Menu(embed=get_embed, show_navigation=False)\
-        .set_options(get_options())
+    last_page = len(items) // per_page + 1
+    menu = Menu(embed=get_embed, show_navigation=False).set_options(get_options)
     await send(dest, menu, timeout=timeout, destroy_on_close=False, only_accept=only_accept)
 
 

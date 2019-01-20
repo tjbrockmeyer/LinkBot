@@ -52,8 +52,8 @@ async def quote(cmd: Command):
 
 
 def quote_to_message(person, said, ref=None):
-    r = f"__[{ref}]__ " if ref else ''
-    return f"{r}**{person}**: {said}"
+    r = f" __{{{ref}}}__" if ref else ''
+    return f"**{person}**{r}: {said}"
 
 
 @require_args(1)
@@ -122,7 +122,7 @@ async def quote_list(cmd: Command):
             cmd.channel,
             [quote_to_message(cmd.guild.get_member(r[0]).display_name, r[1], r[2]) for r in results],
             lambda: bot.embed(c=discord.Color.dark_green(), title="Quote List"),
-            f"For {cmd.guild.name}:")
+            f"For {cmd.guild.name}")
 
 
 @restrict(ADMIN_ONLY)
@@ -194,6 +194,7 @@ async def quote_remove(cmd: Command):
                 await send_success(cmd.message)
 
 
+@restrict(ADMIN_ONLY)
 @require_args(2)
 async def quote_ref(cmd: Command):
 
@@ -205,8 +206,11 @@ async def quote_ref(cmd: Command):
     cmd.shiftargs()
     if subcmd in ['add', 'set']:
         member = None
-        ci1 = cmd.argstr.index(':')
-        ci2 = cmd.argstr.index(':', ci1 + 1)
+        try:
+            ci1 = cmd.argstr.index(':')
+            ci2 = cmd.argstr.index(':', ci1 + 1)
+        except ValueError:
+            raise CommandSyntaxError(cmd, "Arguments must be in the form of: \"reference: author: quote\"")
         ref, person, said = cmd.argstr[:ci1].strip(), cmd.argstr[ci1 + 1:ci2].strip(), cmd.argstr[ci2 + 1:].strip()
         results = search_members(person, cmd.guild)
         await resolve_search_results(results, person, 'members', cmd.author, cmd.channel, set_member)

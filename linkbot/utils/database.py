@@ -45,6 +45,16 @@ class Session:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.s.close()
 
+    @staticmethod
+    def print_result_statement(result, **kwargs):
+        print(Session.replace(result._metadata['statement'], **kwargs))
+
+    @staticmethod
+    def replace(query: str, **kwargs):
+        for k, v in kwargs.items():
+            query = query.replace(f"{{{k}}}", str(v) if not isinstance(v, str) else f"'{v}'")
+        return query
+
     # MANAGE database calls
 
     def create_constraints(self):
@@ -373,4 +383,64 @@ class Session:
         self.s.run(
             "MATCH (q:Quote {ref: {ref}})<-[:SAID]-(:Member)-[:MEMBER_OF]->(:Guild {id: {g_id}})\n"
             "REMOVE q.ref", g_id=g_id, ref=ref).single()
+
+    # TOPIC database calls
+
+    def get_guild_topics(self, g_id):
+        """ Return the names of all created topics for the given guild. """
+
+        results = self.s.run(
+            "MATCH (g:Guild {id: {g_id}})-[:HAS_TOPIC]->(t:Topic)\n"
+            "OPTIONAL MATCH (t)<-[r:SUBSCRIBED_TO]-(:Member)\n"
+            "RETURN t.name, count(r) as subCount", g_id=g_id)
+        return results.values()
+
+    def create_topic(self, g_id, name):
+        """ Create a topic for the given guild with the given name if it does not already exist. """
+
+        self.s.run(
+            "MATCH (g:Guild {id: {g_id}})\n"
+            "MERGE (g)-[:HAS_TOPIC]->(:Topic {name: {name}})", g_id=g_id, name=name)
+
+    def get_topic(self, g_id, name):
+        """ Get the ID() for the topic of the given guild that has the given name. """
+
+        result = self.s.run(
+            "MATCH (g:Guild {id: {g_id}})-[:HAS_TOPIC]->(t:Topic {name: {name}})\n"
+            "RETURN ID(t) as id", g_id=g_id, name=name).single()
+        return result
+
+    def create_sub_to_topic(self, g_id, m_id, name):
+        """ Create a subscription relationship between the given member and the given topic of the given guild. """
+
+        self.s.run(
+            "MATCH (g:Guild {id: {g_id}})-[:HAS_TOPIC]->(t:Topic {name: {name}})\n"
+            "MATCH (g)<-[:MEMBER_OF]-(m:Member)-[:USER]->(u:User {id: {m_id}})\n"
+            "MERGE (t)<-[:SUBSCRIBED_TO]-(m)", g_id=g_id, m_id=m_id, name=name)
+
+    def delete_sub_to_topic(self, g_id, m_id, name):
+        """ Delete the relationship between the given member and the given topic of the given guild. """
+
+        self.s.run(
+            "MATCH (g:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(u:User {id: {m_id}})\n"
+            "MATCH (m)-[r:SUBSCRIBED_TO]->(t:Topic {name: {name}})\n"
+            "DELETE r", g_id=g_id, m_id=m_id, name=name)
+
+    def get_member_subscriptions(self, g_id, m_id):
+        """ Return a list of the names of all topics of the given guild that the member is subscribed to. """
+
+        results = self.s.run(
+            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(u:User {id: {m_id}})\n"
+            "MATCH (m)-[:SUBSCRIBED_TO]->(t:Topic)\n"
+            "RETURN collect(t.name)", g_id=g_id, m_id=m_id)
+        return results.values()[0][0]
+
+    def get_topic_subs(self, g_id, name):
+        """ Return a list of all members of the given guild that are subscribed to the named topic. """
+
+        results = self.s.run(
+            "MATCH (:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(u:User)\n"
+            "MATCH (m)-[:SUBSCRIBED_TO]->(t:Topic {name: {name}})\n"
+            "RETURN collect(u.id)", g_id=g_id, name=name)
+        return results.values()[0][0]
 
