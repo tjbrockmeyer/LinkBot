@@ -4,7 +4,7 @@ from linkbot.utils.misc import english_listing
 
 
 @command(
-    ["{c} list", "admin add <@user|@role>", "admin remove <@user|@role>"],
+    ["{c} list", "{c} add <@user|@role>", "{c} remove <@user|@role>"],
     "List admins, or add/remove them.",
     [
         ("{c} list", "Lists all of the admins for this server."),

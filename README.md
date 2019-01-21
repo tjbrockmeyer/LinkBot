@@ -17,7 +17,6 @@ You can ping topics with a command when you want to post relevant information.
 ## Getting Started
 1. pip requirements  
 Download the dependencies using pip: `pip install -r requirements.txt`  
-As an exception: If you do not have Visual C++ and don't want to get it, you can `pip install fuzzywuzzy` without the `[speedup]`.
 2. Discord API Application and Bot Account  
 You can get both of these at the Discord Developer portal [here](https://discordapp.com/developers/applications/).
 3. Neo4j Database  

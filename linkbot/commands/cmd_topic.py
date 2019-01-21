@@ -58,7 +58,6 @@ async def topic_list(cmd: Command):
         description="\n".join(f"**{name}**: {count} subs" for name, count in results)))
 
 
-@restrict(ADMIN_ONLY)
 @require_args(1)
 async def topic_create(cmd: Command):
     with db.Session() as sess:

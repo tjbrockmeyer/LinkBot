@@ -48,7 +48,7 @@ async def birthday_list(cmd: Command):
     await cmd.channel.send(embed=bot.embed(
         c=discord.Color.purple(),
         title=f"Birthdays for {cmd.guild.name}",
-        description="\n".join(f"{p.display_name}: {b.strftime('%B %d')}" for (p, b) in bdays)))
+        description="\n".join(f"**{p.display_name}**: {b.strftime('%B %d')}" for (p, b) in bdays)))
 
 
 @restrict(ADMIN_ONLY)

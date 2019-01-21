@@ -1,6 +1,6 @@
-discord-rewrite
+https://github.com/Rapptz/discord.py/archive/rewrite.zip
 requests
 gitpython
 neo4j
 neobolt
-fuzzywuzzy[speedup]
+fuzzywuzzy
