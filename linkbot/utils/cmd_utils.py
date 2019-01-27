@@ -34,7 +34,7 @@ def restrict(conditions, reason=''):
                     cmd, f"`{cmd.info.command}` can only be used in a server.")
             elif ADMIN_ONLY & conditions and not is_admin(cmd.author):
                 raise CommandPermissionError(
-                    cmd, f"`{cmd.info.command}` can only be used by registered adnims. See `{bot.prefix}admin list`")
+                    cmd, f"`{cmd.info.command}` can only be used by registered admins. See `{bot.prefix}admin list`")
             elif DM_ONLY & conditions and not cmd.is_dm:
                 raise CommandPermissionError(
                     cmd, f"`{cmd.info.command}` can only be used in a direct message.")
