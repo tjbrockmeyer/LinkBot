@@ -69,6 +69,8 @@ class Command:
         self.is_valid = self.info is not None
 
     def is_banned(self):
+        if not self.guild:
+            return False
         with db.Session() as sess:
             return sess.get_member_is_banned_from_command(self.guild.id, self.author.id, self.info.command_name)
 

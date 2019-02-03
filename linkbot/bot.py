@@ -122,7 +122,7 @@ async def on_ready():
     logging.info('Prefix: ' + "'" + bot.prefix + "'")
     if bot.debug:
         await client.change_presence(activity=discord.Game(name='Development'))
-        logging.info('Currently running in DEBUG mode. Edit source with DEBUG = False to deactivate.')
+        logging.info('Currently running in DEBUG mode. Update config to disable.')
     else:
         await client.change_presence(activity=discord.Game(name=f'{bot.prefix}help'))
 
