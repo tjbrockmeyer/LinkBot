@@ -15,18 +15,20 @@ from typing import Optional, List, Tuple
 DISABLE = 1
 SERVER_ONLY = 2
 OWNER_ONLY = 4
-ADMIN_ONLY = 8 | SERVER_ONLY
+ADMIN_ONLY = 8
 DM_ONLY = 16
 
 
 def restrict(conditions, reason=''):
+    if conditions & ADMIN_ONLY:
+        conditions |= SERVER_ONLY
     def decorator(func):
         @wraps(func)
         async def wrapper(cmd: Command, *args, **kwargs):
             if DISABLE & conditions:
                 raise CommandPermissionError(
                     cmd, f"`{cmd.info.command_name}` is disabled. {'Reason: {}.'.format(reason) if reason else ''}")
-            elif OWNER_ONLY & conditions and not is_admin(cmd.author):
+            elif OWNER_ONLY & conditions and not is_bot_owner(cmd.author):
                 raise CommandPermissionError(
                     cmd, f"`{cmd.info.command_name}` can only be used by the bot's owner: {bot.owner}")
             elif SERVER_ONLY & conditions and cmd.guild is None:
