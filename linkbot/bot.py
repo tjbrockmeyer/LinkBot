@@ -122,6 +122,7 @@ async def on_ready():
     logging.info('Prefix: ' + "'" + bot.prefix + "'")
     if bot.debug:
         await client.change_presence(activity=discord.Game(name='Development'))
+        db.LOG_QUERIES = True
         logging.info('Currently running in DEBUG mode. Update config to disable.')
     else:
         await client.change_presence(activity=discord.Game(name=f'{bot.prefix}help'))
@@ -137,7 +138,12 @@ async def on_ready():
 @event
 async def on_member_join(member):
     with db.Session() as sess:
-        sess.create_member(member.guild.id, member.id)
+        sess.create_members(member.guild.id, [member.id])
+
+@event
+async def on_member_leave(member):
+    with db.Session() as sess:
+        sess.delete_member(member.guild.id, member.id)
 
 @event
 async def on_guild_join(guild):

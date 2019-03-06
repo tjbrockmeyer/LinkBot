@@ -23,23 +23,24 @@ def restrict(conditions, reason=''):
     if conditions & ADMIN_ONLY:
         conditions |= SERVER_ONLY
     def decorator(func):
+        fname = func.__name__.replace('_', ' ')
         @wraps(func)
         async def wrapper(cmd: Command, *args, **kwargs):
             if DISABLE & conditions:
                 raise CommandPermissionError(
-                    cmd, f"`{cmd.info.command_name}` is disabled. {'Reason: {}.'.format(reason) if reason else ''}")
+                    cmd, f"`{fname}` is disabled. {'Reason: {}.'.format(reason) if reason else ''}")
             elif OWNER_ONLY & conditions and not is_bot_owner(cmd.author):
                 raise CommandPermissionError(
-                    cmd, f"`{cmd.info.command_name}` can only be used by the bot's owner: {bot.owner}")
+                    cmd, f"`{fname}` can only be used by the bot's owner: {bot.owner}")
             elif SERVER_ONLY & conditions and cmd.guild is None:
                 raise CommandPermissionError(
-                    cmd, f"`{cmd.info.command_name}` can only be used in a server.")
+                    cmd, f"`{fname}` can only be used in a server.")
             elif ADMIN_ONLY & conditions and not is_admin(cmd.author):
                 raise CommandPermissionError(
-                    cmd, f"`{cmd.info.command_name}` can only be used by registered admins. See `{bot.prefix}admin list`")
+                    cmd, f"`{fname}` can only be used by registered admins. See `{bot.prefix}admin list`")
             elif DM_ONLY & conditions and not cmd.is_dm:
                 raise CommandPermissionError(
-                    cmd, f"`{cmd.info.command_name}` can only be used in a direct message.")
+                    cmd, f"`{fname}` can only be used in a direct message.")
             else:
                 await func(cmd, *args, **kwargs)
         return wrapper

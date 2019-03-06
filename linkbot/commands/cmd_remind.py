@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 
 
 _delay_regex = re.compile(r"(?:(?:(\d+)d ?)|(?:(\d+)h ?)|(?:(\d+)m ?)|(?:(\d+)s ?))+")
+REMINDER_LOOP_TIME = 900
 
 
 @command(
@@ -62,7 +63,7 @@ async def remind(cmd: Command):
     now = datetime.now()
     remind_at = now + timedelta(seconds=delay)
 
-    if delay < 61:
+    if delay < REMINDER_LOOP_TIME:
         client.loop.create_task(remind_soon(cmd.author, remind_at, reason))
     else:
         with db.Session() as sess:
@@ -87,7 +88,7 @@ async def remind(cmd: Command):
 
 @background_task
 async def remind_loop():
-    delta_time = timedelta(seconds=61)
+    delta_time = timedelta(seconds=REMINDER_LOOP_TIME + 1)
     while not client.is_closed():
         min_time = datetime.now() + delta_time
         with db.Session() as sess:
@@ -98,7 +99,7 @@ async def remind_loop():
         for (_, remindee_id, remind_at, reason) in reminders:
             remindee = client.get_user(remindee_id)
             client.loop.create_task(remind_soon(remindee, remind_at, reason))
-        await asyncio.sleep(60)
+        await asyncio.sleep(REMINDER_LOOP_TIME)
 
 
 async def remind_soon(remindee, remind_at, reason):
