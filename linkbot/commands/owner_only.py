@@ -1,11 +1,13 @@
-from linkbot.utils.cmd_utils import *
-import linkbot.utils.menu as menu
-import git
 import os
+import subprocess
+
+import git
+
+import linkbot.utils.menu as menu
+from linkbot.utils.cmd_utils import *
 
 
-
-@command([], "", [], aliases=['logoff'], show_in_help=False)
+@command([], 'Logs the bot out', [], aliases=['logoff'], show_in_help=False)
 @restrict(OWNER_ONLY)
 async def logout(cmd: Command):
     if await menu.send_confirmation(
@@ -17,7 +19,7 @@ async def logout(cmd: Command):
         await force_logout()
 
 
-@command([], "", [], aliases=['reload', 'reboot'], show_in_help=False)
+@command([], 'Restarts the bot', [], aliases=['reload', 'reboot'], show_in_help=False)
 @restrict(OWNER_ONLY)
 async def restart(cmd: Command):
     if await menu.send_confirmation(
@@ -29,7 +31,7 @@ async def restart(cmd: Command):
         await force_logout(reload=True)
 
 
-@command([], "", [], aliases=['upgrade'], show_in_help=False)
+@command([], 'Updates the bot', [], aliases=['upgrade'], show_in_help=False)
 @restrict(OWNER_ONLY)
 async def update(cmd: Command):
     if bot.debug:
@@ -50,9 +52,17 @@ async def update(cmd: Command):
 
 async def force_logout(*, reload=False):
     bot.restart = reload
+    bot.planned_logout = True
     await client.logout()
     await client.close()
 
+
+@command([], 'Returns the public ip address of the bot', [], aliases=['ip4', 'ip'], show_in_help=False)
+@restrict(OWNER_ONLY | DM_ONLY)
+async def ipv4(cmd: Command):
+    curl = subprocess.run(['curl', 'http://bot.whatismyipaddress.com/'], stdout=subprocess.PIPE, encoding='utf-8',
+                          check=True)
+    cmd.author.send(curl.stdout)
 
 
 @command([], "", [], show_in_help=False)

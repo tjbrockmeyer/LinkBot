@@ -1,21 +1,21 @@
+import asyncio
 import logging
 import os
 import sys
-import discord
-import asyncio
 import traceback
 from functools import wraps, reduce
 from importlib import import_module
+
+import discord
 
 import GoogleAPI
 import RiotAPI
 import linkbot.utils.database as db
 from linkbot.errors import *
-from linkbot.utils.ini import Ini
 from linkbot.utils import emoji
 from linkbot.utils.command import Command
+from linkbot.utils.ini import Ini
 from linkbot.utils.misc import create_config, split_message
-
 
 cmd_dir = 'linkbot/commands/'
 config_ini = 'config.ini'
@@ -29,6 +29,7 @@ class LinkBot:
             raise InitializationError("Config has been created. Fill out the required information before continuing.")
 
         self.restart = False
+        self.planned_logout = False
         self.commands = {}
         self.events = {}
 
@@ -86,7 +87,7 @@ class LinkBot:
 
         db.shutdown()
         logging.info('Bot has been logged out.')
-        if self.restart:
+        if self.restart or not self.planned_logout:
             logging.info("Restarting...")
             os.execl(sys.executable, sys.executable, *sys.argv)
 

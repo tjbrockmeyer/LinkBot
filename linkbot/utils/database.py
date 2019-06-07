@@ -1,10 +1,11 @@
 
 import logging
-import neo4j
-from neobolt.exceptions import AuthError, ServiceUnavailable
-from linkbot.utils.ini import Ini
 from datetime import date
 
+import neo4j
+from neobolt.exceptions import AuthError, ServiceUnavailable
+
+from linkbot.utils.ini import Ini
 
 _driver: neo4j.Driver = None
 LOG_QUERIES = False
@@ -96,7 +97,7 @@ class Session:
         """ Delete a guild object with the given id. This will delete all connected information. """
 
         self.run(
-            "MATCH (g:Guild {id: 1001})--(n)\n"
+            "MATCH (g:Guild {id: {g_id}})--(n)\n"
             "DETACH DELETE g, n", g_id=g_id)
 
     def create_members(self, g_id, m_ids):
