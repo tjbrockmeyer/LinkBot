@@ -62,7 +62,7 @@ async def force_logout(*, reload=False):
 async def ipv4(cmd: Command):
     curl = subprocess.run(['curl', 'http://bot.whatismyipaddress.com/'], stdout=subprocess.PIPE, encoding='utf-8',
                           check=True)
-    cmd.author.send(curl.stdout)
+    await cmd.author.send(curl.stdout)
 
 
 @command([], "", [], show_in_help=False)
