@@ -9,3 +9,5 @@ cover/
 .idea/
 __pycache__/
 data/
+exits.log
+last-run.log

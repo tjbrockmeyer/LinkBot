@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import logging
 import os
 import sys
@@ -86,6 +87,9 @@ class LinkBot:
         client.run(self.token)
 
         db.shutdown()
+        with open('./exits.log', 'a') as f:
+            f.write(
+                f"{datetime.datetime.now()} | restart: {'T' if self.restart else '_'} | planned_logout: {'T' if self.planned_logout else '_'}")
         logging.info('Bot has been logged out.')
         if self.restart or not self.planned_logout:
             logging.info("Restarting...")
