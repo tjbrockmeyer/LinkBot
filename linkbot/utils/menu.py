@@ -1,9 +1,11 @@
 
-from linkbot.bot import client
 import asyncio
-import discord
-import linkbot.utils.emoji as emoji
 from typing import Union, Callable, List, Coroutine, Optional
+
+import discord
+
+import linkbot.utils.emoji as emoji
+from linkbot.bot import client
 
 
 class Option:
@@ -152,8 +154,6 @@ async def send(dest: discord.abc.Messageable,
     async def set_menu(m):
         nonlocal embed, emojis, e2o, message, menu
         menu = m
-        if message:
-            await message.delete()
 
         # Get menu embedded content.
         if callable(menu.embed):
@@ -181,7 +181,13 @@ async def send(dest: discord.abc.Messageable,
         e2o = {o.emoji: o for o in options}
 
         # Send message and reactions.
-        message = await dest.send(embed=embed)
+        if message:
+            await message.edit(embed=embed)
+            await message.clear_reactions()
+            # Sleep to avoid a rate limit
+            await asyncio.sleep(0.25)
+        else:
+            message = await dest.send(embed=embed)
         for _e in emojis:
             await message.add_reaction(_e)
 
