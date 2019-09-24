@@ -60,8 +60,8 @@ class LinkBot:
     def run(self):
         try:
             logging.info("Connecting to the database...")
-            if not db.startup(config_ini):
-                raise InitializationError("Database is unaccessible")
+            while not db.startup(config_ini):
+                print(InitializationError("Database is unaccessible"))
 
             logging.info("Syncing database settings...")
             with db.Session() as sess:
