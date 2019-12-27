@@ -216,7 +216,7 @@ async def send(dest: discord.abc.Messageable,
     except asyncio.TimeoutError:
         pass
     finally:
-        message = await message.channel.get_message(message.id)
+        message = await message.channel.fetch_message(message.id)
         if message:
             if destroy_on_close:
                 await message.delete()
