@@ -3,6 +3,7 @@ import datetime
 import logging
 import os
 import sys
+import time
 import traceback
 from functools import wraps, reduce
 from importlib import import_module
@@ -74,20 +75,24 @@ class LinkBot:
                     package = file.replace('/', '.')[:-3]
                     _ = import_module(package)
         except InitializationError:
-            asyncio.ensure_future(client.close())
-            raise
+            time.sleep(3)
+            self.close()
         except KeyboardInterrupt:
-            raise
+            self.planned_logout = True
+            self.close()
         except Exception:
             etype, e, tb = sys.exc_info()
             fmt_exc = reduce(lambda x, y: f"{x}{y}", traceback.format_exception(etype, e, tb), "")
             logging.error(fmt_exc)
-            asyncio.ensure_future(client.close())
-            raise
+            self.close()
 
         logging.info('Initializing and logging in...')
         client.run(self.token)
+        self.close()
 
+    def close(self):
+        if not client.is_closed():
+            asyncio.ensure_future(client.close())
         db.shutdown()
         with open('./exits.log', 'a') as f:
             f.write(
