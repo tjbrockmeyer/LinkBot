@@ -76,6 +76,8 @@ class LinkBot:
         except InitializationError:
             asyncio.ensure_future(client.close())
             raise
+        except KeyboardInterrupt:
+            raise
         except Exception:
             etype, e, tb = sys.exc_info()
             fmt_exc = reduce(lambda x, y: f"{x}{y}", traceback.format_exception(etype, e, tb), "")
