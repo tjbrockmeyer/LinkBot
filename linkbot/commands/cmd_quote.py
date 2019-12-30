@@ -1,7 +1,8 @@
-
+import linkbot.utils.menu as menu
+import linkbot.utils.queries.management as management_queries
+import linkbot.utils.queries.quote as queries
 from linkbot.utils.cmd_utils import *
 from linkbot.utils.search import search_members, resolve_search_results
-import linkbot.utils.menu as menu
 
 
 @command(
@@ -64,8 +65,8 @@ async def quote_say(cmd: Command):
         member = m
 
     if ':' not in cmd.argstr:
-        with db.Session() as sess:
-            q = sess.get_quote_with_ref(cmd.guild.id, cmd.argstr)
+        async with await db.Session.new() as sess:
+            q = await queries.get_quote_with_ref(sess, cmd.guild.id, cmd.argstr)
         if not q:
             raise CommandError(cmd, f"'{cmd.argstr} is not a valid quote reference.")
         q = quote_to_message(cmd.guild.get_member(q[0]).display_name, q[1], cmd.argstr)
@@ -77,8 +78,8 @@ async def quote_say(cmd: Command):
         await resolve_search_results(results, person, 'members', cmd.author, cmd.channel, set_member)
         if not member:
             return
-        with db.Session() as sess:
-            result = sess.get_quote_starts_with(cmd.guild.id, member.id, said)
+        async with await db.Session.new() as sess:
+            result = await queries.get_quote_starts_with(sess, cmd.guild.id, member.id, said)
         if not result:
             raise CommandError(cmd, f"{member.display_name} has no quotes that start with '{said}'.")
         q = quote_to_message(member.display_name, result[0], result[1])
@@ -102,8 +103,8 @@ async def quote_list(cmd: Command):
         await resolve_search_results(results, cmd.argstr, 'members', cmd.author, cmd.channel, set_member)
         if not member:
             return
-        with db.Session() as sess:
-            results = sess.get_quotes_from_member(cmd.guild.id, member.id)
+        async with await db.Session.new() as sess:
+            results = await queries.get_quotes_from_member(sess, cmd.guild.id, member.id)
         if not results:
             raise CommandError(cmd, f"I don't know any quotes by {member.display_name}.")
         await menu.send_list(
@@ -114,8 +115,8 @@ async def quote_list(cmd: Command):
 
     else:
         # List for full guild.
-        with db.Session() as sess:
-            results = sess.get_guild_quotes(cmd.guild.id)
+        async with await db.Session.new() as sess:
+            results = await queries.get_guild_quotes(sess, cmd.guild.id)
         if not results:
             raise CommandError(cmd, f"I don't know any quotes from {cmd.guild.name}.")
         await menu.send_list(
@@ -142,8 +143,8 @@ async def quote_add(cmd: Command):
     await resolve_search_results(results, person, 'members', cmd.author, cmd.channel, set_member)
     if not member:
         return
-    with db.Session() as sess:
-        sess.create_quote(cmd.guild.id, member.id, said)
+    async with await db.Session.new() as sess:
+        await queries.create_quote(sess, cmd.guild.id, member.id, said)
     await send_success(cmd.message)
 
 
@@ -156,8 +157,8 @@ async def quote_remove(cmd: Command):
         member = m
 
     if ':' not in cmd.argstr:
-        with db.Session() as sess:
-            result = sess.get_quote_with_ref(cmd.guild.id, cmd.argstr)
+        async with await db.Session.new() as sess:
+            result = await queries.get_quote_with_ref(sess, cmd.guild.id, cmd.argstr)
             if not result:
                 raise CommandError(cmd, f"'{cmd.argstr} is not a valid quote reference.")
             do_it = await menu.send_confirmation(
@@ -168,7 +169,7 @@ async def quote_remove(cmd: Command):
                     description=quote_to_message(cmd.guild.get_member(result[0]).display_name, result[1], cmd.argstr)),
                 only_accept=cmd.author)
             if do_it:
-                sess.delete_node_with_id(result[2])
+                await management_queries.delete_node_with_id(sess, result[2])
                 await send_success(cmd.message)
     else:
         member = None
@@ -178,8 +179,8 @@ async def quote_remove(cmd: Command):
         await resolve_search_results(results, person, 'members', cmd.author, cmd.channel, set_member)
         if not member:
             return
-        with db.Session() as sess:
-            result = sess.get_quote_starts_with(cmd.guild.id, member.id, said)
+        async with await db.Session.new() as sess:
+            result = await queries.get_quote_starts_with(sess, cmd.guild.id, member.id, said)
             if not result:
                 raise CommandError(cmd, f"{member.display_name} has no quotes that start with '{said}'.")
             do_it = await menu.send_confirmation(
@@ -190,7 +191,7 @@ async def quote_remove(cmd: Command):
                     description=quote_to_message(member.display_name, result[0], result[1])),
                 only_accept=cmd.author)
             if do_it:
-                sess.delete_node_with_id(result[2])
+                await management_queries.delete_node_with_id(sess, result[2])
                 await send_success(cmd.message)
 
 
@@ -216,13 +217,13 @@ async def quote_ref(cmd: Command):
         await resolve_search_results(results, person, 'members', cmd.author, cmd.channel, set_member)
         if not member:
             return
-        with db.Session() as sess:
-            sess.set_quote_reference(cmd.guild.id, member.id, said, ref)
+        async with await db.Session.new() as sess:
+            await queries.set_quote_reference(sess, cmd.guild.id, member.id, said, ref)
         await send_success(cmd.message)
 
     elif subcmd in ['delete', 'remove']:
-        with db.Session() as sess:
-            sess.remove_quote_reference(cmd.guild.id, cmd.argstr)
+        async with await db.Session.new() as sess:
+            await queries.remove_quote_reference(sess, cmd.guild.id, cmd.argstr)
         await send_success(cmd.message)
 
     else:

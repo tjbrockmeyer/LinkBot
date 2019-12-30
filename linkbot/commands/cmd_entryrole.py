@@ -1,3 +1,4 @@
+import linkbot.utils.queries.entryrole as queries
 from linkbot.utils.cmd_utils import *
 from linkbot.utils.search import search_roles, resolve_search_results
 
@@ -18,8 +19,8 @@ async def entryrole(cmd: Command):
         role = r
 
     if not cmd.args:
-        with db.Session() as sess:
-            r_id = sess.get_entry_role(cmd.guild.id)
+        async with await db.Session.new() as sess:
+            r_id = await queries.get_entry_role(sess, cmd.guild.id)
         if not r_id:
             raise CommandError(cmd, 'There is not an entry level role set for this server.')
         role = discord.utils.get(cmd.guild.roles, id=r_id)
@@ -37,13 +38,13 @@ async def entryrole(cmd: Command):
         await resolve_search_results(roles, cmd.argstr, 'roles', cmd.author, cmd.channel, set_role)
         if not role:
             return
-        with db.Session() as sess:
-            sess.set_entry_role(cmd.guild.id, role.id)
+        async with await db.Session.new() as sess:
+            await queries.set_entry_role(sess, cmd.guild.id, role.id)
         await send_success(cmd.message)
 
     elif cmd.args[0] == 'remove':
-        with db.Session() as sess:
-            sess.remove_entry_role(cmd.guild.id)
+        async with await db.Session.new() as sess:
+            await queries.remove_entry_role(sess, cmd.guild.id)
         await send_success(cmd.message)
     else:
         raise CommandSyntaxError(cmd, "Invalid subcommand.")
@@ -51,8 +52,8 @@ async def entryrole(cmd: Command):
 
 @on_event('ready')
 async def entryrole_check_all():
-    with db.Session() as sess:
-        results = sess.get_guilds_with_entry_roles()
+    async with await db.Session.new() as sess:
+        results = await queries.get_guilds_with_entry_roles(sess)
     for (guild_id, role_id) in results:
         guild = client.get_guild(guild_id)
         role = discord.utils.get(guild.roles, id=role_id)
@@ -63,8 +64,8 @@ async def entryrole_check_all():
 
 @on_event('member_join')
 async def entryrole_check_one(member):
-    with db.Session() as sess:
-        r_id = sess.get_entry_role(member.guild.id)
+    async with await db.Session.new() as sess:
+        r_id = await queries.get_entry_role(sess, member.guild.id)
     if r_id:
         role = discord.utils.get(member.guild.roles, id=r_id)
         await member.add_roles(role)

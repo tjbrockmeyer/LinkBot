@@ -1,4 +1,4 @@
-
+import linkbot.utils.queries.cmdban as queries
 from linkbot.utils.cmd_utils import *
 from linkbot.utils.search import search_members, resolve_search_results
 
@@ -29,8 +29,8 @@ async def command_ban(cmd: Command):
         raise CommandPermissionError(cmd, "You cannot ban yourself.")
     if member == cmd.guild.owner:
         raise CommandError(cmd, "You cannot ban the server owner from commands.")
-    with db.Session() as sess:
-        sess.create_command_ban(cmd.guild.id, member.id, bancmd)
+    async with await db.Session.new() as sess:
+        await queries.create_command_ban(sess, cmd.guild.id, member.id, bancmd)
     await send_success(cmd.message)
 
 
@@ -54,6 +54,6 @@ async def command_unban(cmd: Command):
         raise CommandPermissionError(cmd, "You cannot ban yourself.")
     if member == cmd.guild.owner:
         raise CommandError(cmd, "You cannot ban the server owner from commands.")
-    with db.Session() as sess:
-        sess.delete_command_ban(cmd.guild.id, member.id, bancmd)
+    async with await db.Session.new() as sess:
+        await queries.delete_command_ban(sess, cmd.guild.id, member.id, bancmd)
     await send_success(cmd.message)

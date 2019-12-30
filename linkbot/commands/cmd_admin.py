@@ -1,6 +1,7 @@
 
 from linkbot.utils.cmd_utils import *
 from linkbot.utils.misc import english_listing
+from linkbot.utils.queries import admin as queries
 
 
 @command(
@@ -30,8 +31,8 @@ async def admin(cmd: Command):
 
 
 async def admin_list(cmd):
-    with db.Session() as sess:
-        admin_ids = sess.get_guild_admins(cmd.guild.id)
+    with await db.Session.new() as sess:
+        admin_ids = await queries.get_guild_admins(sess, cmd.guild.id)
         admins = [cmd.guild.get_member(x) for x in admin_ids]
     if cmd.guild.owner not in admins:
         admins.append(cmd.guild.owner)
@@ -48,8 +49,8 @@ async def admin_add(cmd):
 
     m_ids = set(m.id for m in cmd.message.mentions) \
         .union(set(m.id for r in cmd.message.role_mentions for m in r.members))
-    with db.Session() as sess:
-        sess.create_admins(cmd.guild.id, list(m_ids))
+    async with await db.Session.new() as sess:
+        await queries.create_admins(sess, cmd.guild.id, list(m_ids))
     await send_success(cmd.message)
 
 
@@ -60,6 +61,6 @@ async def admin_remove(cmd):
 
     m_ids = set(m.id for m in cmd.message.mentions) \
         .union(set(m.id for r in cmd.message.role_mentions for m in r.members))
-    with db.Session() as sess:
-        sess.delete_admins(cmd.guild.id, list(m_ids))
+    async with await db.Session.new() as sess:
+        await queries.delete_admins(sess, cmd.guild.id, list(m_ids))
     await send_success(cmd.message)

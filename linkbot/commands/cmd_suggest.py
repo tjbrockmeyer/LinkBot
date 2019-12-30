@@ -1,5 +1,4 @@
 from linkbot.utils.cmd_utils import *
-from linkbot.utils.search import split_and_send_message
 
 
 @command(
@@ -16,7 +15,6 @@ from linkbot.utils.search import split_and_send_message
 async def suggest(cmd: Command):
     if not cmd.args:
         raise CommandSyntaxError(cmd, "You must specify a suggestion.")
-    with db.Session() as sess:
-        cur.execute("INSERT INTO suggestions (suggestion) VALUES (%s);", [cmd.argstr])
-        conn.commit()
+    async with await db.Session.new() as sess:
+        pass
     await send_success(cmd.message)

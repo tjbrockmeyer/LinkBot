@@ -1,13 +1,13 @@
+from typing import Callable, List, Any, Coroutine
 
 import discord
-import linkbot.utils.database as db
+import fuzzywuzzy.fuzz as fuzz
+from fuzzywuzzy import process
+
 import linkbot.utils.emoji as emoji
 import linkbot.utils.menu as menu
-from linkbot.utils.misc import split_message
 from linkbot.bot import LinkBot
-from fuzzywuzzy import process
-import fuzzywuzzy.fuzz as fuzz
-from typing import Callable, List, Any, Coroutine
+from linkbot.utils.misc import split_message
 
 
 def string_search_top_n(query: str, choices: List[str], n: int=5):

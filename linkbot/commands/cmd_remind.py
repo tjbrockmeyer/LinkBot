@@ -1,9 +1,9 @@
 
 import re
-import asyncio
-from linkbot.utils.cmd_utils import *
 from datetime import datetime, timedelta
 
+import linkbot.utils.queries.reminder as queries
+from linkbot.utils.cmd_utils import *
 
 _delay_regex = re.compile(r"(?:(?:(\d+)d ?)|(?:(\d+)h ?)|(?:(\d+)m ?)|(?:(\d+)s ?))+")
 REMINDER_LOOP_TIME = 900
@@ -21,8 +21,8 @@ REMINDER_LOOP_TIME = 900
 @require_args(1)
 async def remind(cmd: Command):
     if cmd.args[0] == 'purge':
-        with db.Session() as sess:
-            sess.delete_reminders_for_user(cmd.author.id)
+        with db.Session.new() as sess:
+            await queries.delete_reminders_for_user(sess, cmd.author.id)
         await send_success(cmd.message)
         return
 
@@ -66,8 +66,8 @@ async def remind(cmd: Command):
     if delay < REMINDER_LOOP_TIME:
         client.loop.create_task(remind_soon(cmd.author, remind_at, reason))
     else:
-        with db.Session() as sess:
-            sess.create_reminder(cmd.author.id, remind_at, reason)
+        async with await db.Session.new() as sess:
+            await queries.create_reminder(sess, cmd.author.id, remind_at, reason)
 
     # Exclude date from notification if the reminder will occur within 24 hours.
     if delay < 85000:
@@ -91,11 +91,11 @@ async def remind_loop():
     delta_time = timedelta(seconds=REMINDER_LOOP_TIME + 1)
     while not client.is_closed():
         min_time = datetime.now() + delta_time
-        with db.Session() as sess:
-            reminders = sess.get_reminders_before(min_time)
+        async with await db.Session.new() as sess:
+            reminders = await queries.get_reminders_before(sess, min_time)
             if reminders:
                 ids = [r[0] for r in reminders]
-                sess.delete_reminders_with_ids(ids)
+                await queries.delete_reminders_with_ids(sess, ids)
         for (_, remindee_id, remind_at, reason) in reminders:
             remindee = client.get_user(remindee_id)
             client.loop.create_task(remind_soon(remindee, remind_at, reason))

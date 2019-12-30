@@ -1,16 +1,18 @@
-
-from linkbot.utils import database as db
-from linkbot.bot import bot
-import discord
 from typing import Union
 
+import discord
 
-def is_admin(member: discord.Member):
+import linkbot.utils.queries.admin as admin
+import neo4jdb as db
+from linkbot.bot import bot
+
+
+async def is_admin(member: discord.Member):
     """ Checks if the member is able to use admin commands. This can be an Admin, Bot owner, or Server owner. """
     if is_bot_owner(member) or is_server_owner(member):
         return True
-    with db.Session() as sess:
-        if sess.get_member_is_admin(member.guild.id, member.id):
+    async with await db.Session.new() as sess:
+        if await admin.get_member_is_admin(sess, member.guild.id, member.id):
             return True
     return False
 

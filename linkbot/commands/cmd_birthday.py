@@ -1,9 +1,10 @@
+from datetime import date, datetime
 
-from linkbot.utils.cmd_utils import *
+import linkbot.utils.queries.birthday as queries
 from linkbot.commands.cmd_info_channel import get_guild_info_channel
+from linkbot.utils.cmd_utils import *
 from linkbot.utils.misc import english_listing, parse_date
 from linkbot.utils.search import search_members, resolve_search_results
-from datetime import date, datetime
 
 
 @command(
@@ -33,8 +34,8 @@ async def birthday(cmd: Command):
 
 async def birthday_list(cmd: Command):
     now = datetime.now()
-    with db.Session() as sess:
-        results = sess.get_guild_birthdays(cmd.guild.id)
+    async with await db.Session.new() as sess:
+        results = await queries.get_guild_birthdays(sess, cmd.guild.id)
     bdays = []
     for (p, b) in results:
         if b.month > now.month or (b.month == now.month and b.day >= now.day):
@@ -80,8 +81,8 @@ async def birthday_set(cmd):
     await resolve_search_results(s_results, person_search, 'members', cmd.author, cmd.channel, set_member)
     if not member:
         return
-    with db.Session() as sess:
-        sess.set_birthday(cmd.guild.id, member.id, bday)
+    async with await db.Session.new() as sess:
+        await queries.set_birthday(sess, cmd.guild.id, member.id, bday)
     await send_success(cmd.message)
 
 
@@ -100,8 +101,8 @@ async def birthday_remove(cmd):
     await resolve_search_results(s_results, person_search, 'members', cmd.author, cmd.channel, set_member)
     if not member:
         return
-    with db.Session() as sess:
-        sess.remove_birthday(cmd.guild.id, member.id)
+    async with await db.Session.new() as sess:
+        await queries.remove_birthday(sess, cmd.guild.id, member.id)
     await send_success(cmd.message)
 
 
@@ -109,16 +110,16 @@ async def birthday_remove(cmd):
 async def birthday_check():
     while True:
         for guild in client.guilds:
-            with db.Session() as sess:
-                m_ids = sess.get_unrecognized_birthdays(guild.id)
+            async with await db.Session.new() as sess:
+                m_ids = await queries.get_unrecognized_birthdays(sess, guild.id)
                 if m_ids:
                     names = [guild.get_member(m_id).display_name for m_id in m_ids]
                     people = english_listing(names)
-                    channel = get_guild_info_channel(guild)
+                    channel = await get_guild_info_channel(guild)
                     await channel.send(f"{emoji.Symbol.congratulations}", embed=bot.embed(
                         c=discord.Color.purple(),
                         footer_text=f"Love, Link Bot {emoji.Symbol.heart}",
                         title=f"{emoji.Symbol.birthday} Happy Birthday to {people}! {emoji.Symbol.cake}"))
-                    sess.set_birthday_recognition(guild.id, m_ids)
+                    await queries.set_birthday_recognition(sess, guild.id, m_ids)
         await asyncio.sleep(900)
 

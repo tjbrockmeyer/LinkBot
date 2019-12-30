@@ -1,16 +1,14 @@
 
-import logging
-import discord
 import asyncio
+import logging
 from functools import wraps
+from typing import Optional, List, Tuple
+
+import linkbot.utils.emoji as emoji
 from linkbot.bot import client
 from linkbot.errors import *
 from linkbot.utils.checks import *
-import linkbot.utils.emoji as emoji
-from linkbot.utils.emoji import send_success
 from linkbot.utils.command import Command, CommandInfo
-from typing import Optional, List, Tuple
-
 
 DISABLE = 1
 SERVER_ONLY = 2
@@ -35,7 +33,7 @@ def restrict(conditions, reason=''):
             elif SERVER_ONLY & conditions and cmd.guild is None:
                 raise CommandPermissionError(
                     cmd, f"`{fname}` can only be used in a server.")
-            elif ADMIN_ONLY & conditions and not is_admin(cmd.author):
+            elif ADMIN_ONLY & conditions and not await is_admin(cmd.author):
                 raise CommandPermissionError(
                     cmd, f"`{fname}` can only be used by registered admins. See `{bot.prefix}admin list`")
             elif DM_ONLY & conditions and not cmd.is_dm:

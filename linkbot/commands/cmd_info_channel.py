@@ -1,11 +1,11 @@
-
+import linkbot.utils.queries.infochannel as queries
 from linkbot.utils.cmd_utils import *
 from linkbot.utils.search import search_channels, resolve_search_results
 
 
-def get_guild_info_channel(guild: discord.Guild):
-    with db.Session() as sess:
-        channel_id = sess.get_info_channel(guild.id)
+async def get_guild_info_channel(guild: discord.Guild):
+    async with await db.Session.new() as sess:
+        channel_id = await queries.get_info_channel(sess, guild.id)
     return guild.get_channel(channel_id) if channel_id else guild.system_channel
 
 
@@ -18,8 +18,8 @@ async def info_channel(cmd: Command):
         channel = c
 
     if not cmd.args:
-        with db.Session() as sess:
-            channel_id = sess.get_info_channel(cmd.guild.id)
+        async with await db.Session.new() as sess:
+            channel_id = await queries.get_info_channel(sess, cmd.guild.id)
         if channel_id:
             await cmd.channel.send(embed=bot.embed(
                 c=discord.Color.blurple(),
@@ -34,6 +34,6 @@ async def info_channel(cmd: Command):
         await resolve_search_results(results, cmd.argstr, 'channels', cmd.author, cmd.channel, set_channel)
         if not channel:
             return
-        with db.Session() as sess:
-            sess.set_info_channel(cmd.guild.id, channel.id)
+        async with await db.Session.new() as sess:
+            await queries.set_info_channel(sess, cmd.guild.id, channel.id)
         await send_success(cmd.message)

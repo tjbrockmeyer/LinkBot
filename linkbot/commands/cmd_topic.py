@@ -1,4 +1,5 @@
-
+import linkbot.utils.queries.management as management_queries
+import linkbot.utils.queries.topic as queries
 from linkbot.utils.cmd_utils import *
 
 
@@ -48,8 +49,8 @@ async def topic(cmd: Command):
 
 
 async def topic_list(cmd: Command):
-    with db.Session() as sess:
-        results = sess.get_guild_topics(cmd.guild.id)
+    async with await db.Session.new() as sess:
+        results = await queries.get_guild_topics(sess, cmd.guild.id)
     if not results:
         raise CommandError(cmd, f"No one has created any topics for {cmd.guild.name}.")
     await cmd.channel.send(embed=bot.embed(
@@ -60,48 +61,48 @@ async def topic_list(cmd: Command):
 
 @require_args(1)
 async def topic_create(cmd: Command):
-    with db.Session() as sess:
-        result = sess.get_topic(cmd.guild.id, cmd.argstr)
+    async with await db.Session.new() as sess:
+        result = await queries.get_topic(sess, cmd.guild.id, cmd.argstr)
         if result:
             raise CommandError(cmd, f"A topic named '{cmd.argstr}' already exists.")
-        sess.create_topic(cmd.guild.id, cmd.argstr)
+        await queries.create_topic(sess, cmd.guild.id, cmd.argstr)
     await send_success(cmd.message)
 
 
 @restrict(ADMIN_ONLY)
 @require_args(1)
 async def topic_delete(cmd: Command):
-    with db.Session() as sess:
-        result = sess.get_topic(cmd.guild.id, cmd.argstr)
+    async with await db.Session.new() as sess:
+        result = await queries.get_topic(sess, cmd.guild.id, cmd.argstr)
         if not result:
             raise CommandError(cmd, f"No topic named '{cmd.argstr}' exists.")
-        sess.delete_node_with_id(result[0])
+        await management_queries.delete_node_with_id(sess, result[0])
     await send_success(cmd.message)
 
 
 @require_args(1)
 async def topic_subscribe(cmd: Command):
-    with db.Session() as sess:
-        result = sess.get_topic(cmd.guild.id, cmd.argstr)
+    async with await db.Session.new() as sess:
+        result = await queries.get_topic(sess, cmd.guild.id, cmd.argstr)
         if not result:
             raise CommandError(cmd, f"No topic named '{cmd.argstr}' exists.")
-        sess.create_sub_to_topic(cmd.guild.id, cmd.author.id, cmd.argstr)
+        await queries.create_sub_to_topic(sess, cmd.guild.id, cmd.author.id, cmd.argstr)
     await send_success(cmd.message)
 
 
 @require_args(1)
 async def topic_unsubscribe(cmd: Command):
-    with db.Session() as sess:
-        result = sess.get_topic(cmd.guild.id, cmd.argstr)
+    async with await db.Session.new() as sess:
+        result = await queries.get_topic(sess, cmd.guild.id, cmd.argstr)
         if not result:
             raise CommandError(cmd, f"No topic named '{cmd.argstr}' exists.")
-        sess.delete_sub_to_topic(cmd.guild.id, cmd.author.id, cmd.argstr)
+        await queries.delete_sub_to_topic(sess, cmd.guild.id, cmd.author.id, cmd.argstr)
     await send_success(cmd.message)
 
 
 async def topic_subscriptions(cmd: Command):
-    with db.Session() as sess:
-        results = sess.get_member_subscriptions(cmd.guild.id, cmd.author.id)
+    async with await db.Session.new() as sess:
+        results = await queries.get_member_subscriptions(sess, cmd.guild.id, cmd.author.id)
     if not results:
         raise CommandError(cmd, "You are not subscribed to any topics.")
     await cmd.channel.send(embed=bot.embed(
@@ -111,8 +112,8 @@ async def topic_subscriptions(cmd: Command):
 
 
 async def topic_ping(cmd: Command):
-    with db.Session() as sess:
-        results = sess.get_topic_subs(cmd.guild.id, cmd.argstr)
+    async with await db.Session.new() as sess:
+        results = await queries.get_topic_subs(sess, cmd.guild.id, cmd.argstr)
     if not results:
         raise CommandError(cmd, "Either the topic does not exist, or there are no subscribers.")
     await cmd.channel.send(" ".join(cmd.guild.get_member(r).mention for r in results), embed=bot.embed(

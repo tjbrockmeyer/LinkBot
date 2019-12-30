@@ -3,7 +3,6 @@ import datetime
 import logging
 import os
 import sys
-import time
 import traceback
 from functools import wraps, reduce
 from importlib import import_module
@@ -12,7 +11,8 @@ import discord
 
 import GoogleAPI
 import RiotAPI
-import linkbot.utils.database as db
+import linkbot.utils.queries.management as management
+import neo4jdb as db
 from linkbot.errors import *
 from linkbot.utils import emoji
 from linkbot.utils.command import Command
@@ -59,33 +59,6 @@ class LinkBot:
             raise InitializationError(f"'prefix' must be specified in {config_ini} for proper functionality.")
 
     def run(self):
-        try:
-            logging.info("Connecting to the database...")
-            while not db.startup(config_ini):
-                print(InitializationError("Database is unaccessible"))
-
-            logging.info("Syncing database settings...")
-            with db.Session() as sess:
-                sess.create_constraints()
-                sess.create_indexes()
-
-            logging.info("Loading commands...")
-            for file in [cmd_dir + f for f in os.listdir(cmd_dir)]:
-                if os.path.isfile(file) and not file.endswith('__init__.py'):
-                    package = file.replace('/', '.')[:-3]
-                    _ = import_module(package)
-        except InitializationError:
-            time.sleep(3)
-            self.close()
-        except KeyboardInterrupt:
-            self.planned_logout = True
-            self.close()
-        except Exception:
-            etype, e, tb = sys.exc_info()
-            fmt_exc = reduce(lambda x, y: f"{x}{y}", traceback.format_exception(etype, e, tb), "")
-            logging.error(fmt_exc)
-            self.close()
-
         logging.info('Initializing and logging in...')
         client.run(self.token)
         self.close()
@@ -128,7 +101,22 @@ def event(func):
 
 @event
 async def on_ready():
+    logging.info("Connecting to the database...")
+    while not db.startup(config_ini):
+        print(InitializationError("Database is unaccessible"))
+
+    logging.info("Syncing database settings...")
+    async with await db.Session.new() as sess:
+        await management.create_constraints(sess)
+        await management.create_indexes(sess)
+
+    logging.info("Loading commands...")
+    for file in [cmd_dir + f for f in os.listdir(cmd_dir)]:
+        if os.path.isfile(file) and not file.endswith('__init__.py'):
+            package = file.replace('/', '.')[:-3]
+            _ = import_module(package)
     bot.owner = client.get_user(bot.owner_id)
+
     if bot.owner is None:
         raise InitializationError("Bot owner could not be found in any servers that the bot is a part of.")
     logging.info('Prefix: ' + "'" + bot.prefix + "'")
@@ -140,32 +128,32 @@ async def on_ready():
         await client.change_presence(activity=discord.Game(name=f'{bot.prefix}help'))
 
     logging.info('Syncing members...')
-    with db.Session() as sess:
+    async with await db.Session.new() as sess:
         for guild in client.guilds:
-            sess.create_guild(guild.id)
-            sess.sync_members(guild.id, [m.id for m in guild.members])
+            await management.create_guild(sess, guild.id)
+            await management.sync_members(sess, guild.id, [m.id for m in guild.members])
 
     logging.info('LinkBot is ready.')
 
 @event
 async def on_member_join(member):
-    with db.Session() as sess:
-        sess.create_members(member.guild.id, [member.id])
+    async with await db.Session.new() as sess:
+        await management.create_members(sess, member.guild.id, [member.id])
 
 @event
 async def on_member_leave(member):
-    with db.Session() as sess:
-        sess.delete_member(member.guild.id, member.id)
+    async with await db.Session.new() as sess:
+        await management.delete_member(sess, member.guild.id, member.id)
 
 @event
 async def on_guild_join(guild):
-    with db.Session() as sess:
-        sess.create_guild(guild.id)
+    async with await db.Session.new() as sess:
+        await management.create_guild(sess, guild.id)
 
 @event
 async def on_guild_remove(guild):
-    with db.Session() as sess:
-        sess.delete_guild(guild.id)
+    async with await db.Session.new() as sess:
+        await management.delete_guild(sess, guild.id)
 
 @event
 async def on_message(message):
@@ -177,7 +165,7 @@ async def on_message(message):
         if cmd.has_prefix or cmd.is_dm:
             if not cmd.is_valid:
                 raise CommandError(cmd, f'"{cmd.command_arg}" is not a valid command.')
-            if cmd.is_banned():
+            if await cmd.is_banned():
                 raise CommandPermissionError(cmd, "You are banned from using this command.")
             await cmd.run()
 

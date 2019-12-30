@@ -1,7 +1,10 @@
 
 from functools import reduce
+
 import discord
-import linkbot.utils.database as db
+
+import linkbot.utils.queries.cmdban as cmdban
+import neo4jdb as db
 
 
 class Command:
@@ -68,11 +71,12 @@ class Command:
         self.info: CommandInfo = bot.commands.get(self.command_arg.lower())
         self.is_valid = self.info is not None
 
-    def is_banned(self):
+    async def is_banned(self):
         if not self.guild:
             return False
-        with db.Session() as sess:
-            return sess.get_member_is_banned_from_command(self.guild.id, self.author.id, self.info.command_name)
+        async with await db.Session.new() as sess:
+            return await cmdban.get_member_is_banned_from_command(
+                sess, self.guild.id, self.author.id, self.info.command_name)
 
     async def run(self):
         await self.info.func(self)
