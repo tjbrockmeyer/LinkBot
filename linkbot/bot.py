@@ -146,7 +146,7 @@ async def on_ready():
             await management.create_guild(sess, guild.id)
             await management.sync_members(sess, guild.id, [m.id for m in guild.members])
             await management.sync_member_nicknames(sess, guild.id,
-                                                   [{'name': m.nickname, 'id': m.id} for m in guild.members])
+                                                   [{'name': m.nick, 'id': m.id} for m in guild.members])
             await management.sync_user_names(sess, [{'name': m.name, 'id': m.id} for m in guild.members])
 
     logging.info('LinkBot is ready.')
@@ -155,8 +155,8 @@ async def on_ready():
 async def on_member_join(member):
     async with await db.Session.tx() as sess:
         await management.create_members(sess, member.guild.id, [member.id])
-        # await management.sync_member_nicknames(sess, member.guild.id, [{'name': member.nickname, 'id': member.id}])
-        # await management.sync_user_names(sess, [{'name': member.name, 'id': member.id}])
+        await management.sync_member_nicknames(sess, member.guild.id, [{'name': member.nick, 'id': member.id}])
+        await management.sync_user_names(sess, [{'name': member.name, 'id': member.id}])
 
 @event
 async def on_member_leave(member):
@@ -249,5 +249,5 @@ async def routinely_sync_known_member_names():
         async with db.Session.tx() as sess:
             for guild in client.guilds:
                 await management.sync_member_nicknames(sess, guild.id,
-                                                       [{'name': m.nickname, 'id': m.id} for m in guild.members])
+                                                       [{'name': m.nick, 'id': m.id} for m in guild.members])
                 await management.sync_user_names(sess, [{'name': m.name, 'id': m.id} for m in guild.members])
