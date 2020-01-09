@@ -96,8 +96,21 @@ def event(func):
         if e in bot.events.keys():
             for f in bot.events[e]:
                 await f(*args, **kwargs)
+
     bot.events[e] = []
     return wrapper
+
+
+def background_task(func):
+    @wraps(func)
+    async def wrapper():
+        await client.wait_until_ready()
+        await asyncio.sleep(1)
+        await func()
+
+    client.loop.create_task(wrapper())
+    return wrapper
+
 
 @event
 async def on_ready():
@@ -128,17 +141,22 @@ async def on_ready():
         await client.change_presence(activity=discord.Game(name=f'{bot.prefix}help'))
 
     logging.info('Syncing members...')
-    async with await db.Session.new() as sess:
+    async with await db.Session.tx() as sess:
         for guild in client.guilds:
             await management.create_guild(sess, guild.id)
             await management.sync_members(sess, guild.id, [m.id for m in guild.members])
+            await management.sync_member_nicknames(sess, guild.id,
+                                                   [{'name': m.nickname, 'id': m.id} for m in guild.members])
+            await management.sync_user_names(sess, [{'name': m.name, 'id': m.id} for m in guild.members])
 
     logging.info('LinkBot is ready.')
 
 @event
 async def on_member_join(member):
-    async with await db.Session.new() as sess:
+    async with await db.Session.tx() as sess:
         await management.create_members(sess, member.guild.id, [member.id])
+        # await management.sync_member_nicknames(sess, member.guild.id, [{'name': member.nickname, 'id': member.id}])
+        # await management.sync_user_names(sess, [{'name': member.name, 'id': member.id}])
 
 @event
 async def on_member_leave(member):
@@ -222,3 +240,14 @@ async def _send_traceback(tb):
     if not bot.debug:
         for msg in split_message(tb, 1994):
             await bot.owner.send(f"```{msg}```")
+
+
+@background_task
+async def routinely_sync_known_member_names():
+    while True:
+        await asyncio.sleep(1200)
+        async with db.Session.tx() as sess:
+            for guild in client.guilds:
+                await management.sync_member_nicknames(sess, guild.id,
+                                                       [{'name': m.nickname, 'id': m.id} for m in guild.members])
+                await management.sync_user_names(sess, [{'name': m.name, 'id': m.id} for m in guild.members])

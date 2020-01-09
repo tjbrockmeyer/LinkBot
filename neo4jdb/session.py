@@ -27,7 +27,7 @@ class Session:
     def __init__(self, loop: asyncio.AbstractEventLoop, as_tx=False):
         self.is_tx = as_tx
         self.s: neo4j.Session = neo4jdb.driver._driver.session()
-        self.t: neo4j.Transaction = None
+        self.t: neo4j.Transaction
         self.loop = loop
 
     async def __aenter__(self):
@@ -46,6 +46,9 @@ class Session:
 
     async def run(self, query: str, **kwargs) -> neo4j.BoltStatementResult:
         try_log_query(query, **kwargs)
-        result = await self.loop.run_in_executor(None, functools.partial(self.s.run, query, **kwargs))
-        print(f"{result}")
+        if self.is_tx:
+            func = self.t.run
+        else:
+            func = self.s.run
+        result = await self.loop.run_in_executor(None, functools.partial(func, query, **kwargs))
         return result

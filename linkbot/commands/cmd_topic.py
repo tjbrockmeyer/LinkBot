@@ -3,6 +3,18 @@ import linkbot.utils.queries.topic as queries
 from linkbot.utils.cmd_utils import *
 
 
+# TODO: Turn topics into groups
+# groups:
+#   can be created, public or private for viewing and joining.
+#     private viewing means that only those that are in the group can see it or use it.
+#     private joining means that people other than the creator must be invited to the group to join it.
+#     a group with private viewing also has private joining.
+#   not locked to guilds
+#   allow for inviting others in, join via reactions.
+#   Can be used to mention all people in the group, send a group-wide message, etc.
+#   And more!
+#   All current features of topics should be adopted by groups.
+
 @command(
     [
         '{c} list',

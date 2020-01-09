@@ -1,4 +1,3 @@
-
 import asyncio
 import logging
 from functools import wraps
@@ -20,8 +19,10 @@ DM_ONLY = 16
 def restrict(conditions, reason=''):
     if conditions & ADMIN_ONLY:
         conditions |= SERVER_ONLY
+
     def decorator(func):
         fname = func.__name__.replace('_', ' ')
+
         @wraps(func)
         async def wrapper(cmd: Command, *args, **kwargs):
             if DISABLE & conditions:
@@ -41,7 +42,9 @@ def restrict(conditions, reason=''):
                     cmd, f"`{fname}` can only be used in a direct message.")
             else:
                 await func(cmd, *args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -53,19 +56,10 @@ def require_args(count):
                 raise CommandSyntaxError(
                     cmd, reason=f"At least {count} argument{' is' if count == 1 else 's are'} necessary.")
             await func(cmd, *args, **kwargs)
+
         return wrapper
+
     return decorator
-
-
-def background_task(func):
-    @wraps(func)
-    async def wrapper():
-        await client.wait_until_ready()
-        await asyncio.sleep(1)
-        await func()
-
-    client.loop.create_task(wrapper())
-    return wrapper
 
 
 def on_event(event_name):
@@ -76,16 +70,17 @@ def on_event(event_name):
         else:
             bot.events[event_name].append(func)
         return func
+
     return decorator
 
 
 def command(syntax: List[str],
             description: str,
             examples: List[Tuple[str, str]], *,
-            name: str="",
-            aliases: Optional[List[str]]=None,
-            show_in_help: bool=True,
-            help_subcommand: bool=True):
+            name: str = "",
+            aliases: Optional[List[str]] = None,
+            show_in_help: bool = True,
+            help_subcommand: bool = True):
     def decorator(func):
         a: List[str] = aliases or []
         n: str = name or func.__name__
@@ -118,4 +113,5 @@ def command(syntax: List[str],
         for x in a:
             bot.commands[x] = cmd_info
         return wrapper
+
     return decorator

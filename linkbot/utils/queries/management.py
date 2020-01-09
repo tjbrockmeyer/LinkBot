@@ -1,3 +1,5 @@
+from typing import List, TypedDict
+
 from neo4jdb import Session
 
 
@@ -16,6 +18,29 @@ async def delete_node_with_id(session: Session, node_id):
     """ Delete and detach a node using its ID(). """
 
     await session.run("MATCH (n) WHERE ID(n) = {id} DETACH DELETE n", id=node_id)
+
+
+class IdNameMapping(TypedDict):
+    id: int
+    name: str
+
+
+async def sync_user_names(session: Session, mapping: List[IdNameMapping]):
+    """ Given a list of tuples (user_id, user_name), update the saved name in the cache. """
+
+    await session.run(
+        "UNWIND {mapping} AS user\n"
+        "MATCH (u:User {id: user.id})\n"
+        "SET u.name = user.name", mapping=mapping)
+
+
+async def sync_member_nicknames(session: Session, g_id: int, mapping: List[IdNameMapping]):
+    """ Given a list of ids and names, sets the member of the guild's nickname in the cache. """
+
+    await session.run(
+        "UNWIND {mapping} AS member\n"
+        "MATCH (g:Guild {id: {g_id}})<-[:MEMBER_OF]-(m:Member)-[:USER]->(:User {id: member.id})\n"
+        "SET m.nickname = member.name", g_id=g_id, mapping=mapping)
 
 
 async def sync_members(session: Session, g_id, m_ids):
