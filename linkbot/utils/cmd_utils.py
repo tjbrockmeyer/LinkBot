@@ -4,10 +4,14 @@ from functools import wraps
 from typing import Optional, List, Tuple
 
 import linkbot.utils.emoji as emoji
-from linkbot.bot import client
+from linkbot.bot import client, background_task
 from linkbot.errors import *
 from linkbot.utils.checks import *
 from linkbot.utils.command import Command, CommandInfo
+from linkbot.utils.emoji import send_success
+
+background_task = background_task
+send_success = send_success
 
 DISABLE = 1
 SERVER_ONLY = 2
