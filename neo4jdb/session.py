@@ -41,7 +41,6 @@ class Session:
                 self.t.rollback()
             else:
                 self.t.commit()
-            self.t.close()
         self.s.close()
 
     async def run(self, query: str, **kwargs) -> neo4j.BoltStatementResult:
@@ -50,5 +49,4 @@ class Session:
             func = self.t.run
         else:
             func = self.s.run
-        result = await self.loop.run_in_executor(None, functools.partial(func, query, **kwargs))
-        return result
+        return await self.loop.run_in_executor(None, functools.partial(func, query, **kwargs))
